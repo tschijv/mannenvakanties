@@ -1,0 +1,28 @@
+<%- include('partials/head', { title: 'Lid worden — Mannenvakanties' }) %>
+<%- include('partials/topbar') %>
+
+<main class="auth-wrap">
+  <div class="auth-card">
+    <h1 class="auth-title">Lid worden</h1>
+    <p class="auth-intro">Maak een account aan om jaren toe te voegen, foto's te uploaden en bijschriften te schrijven.</p>
+    <% if (error) { %><div class="flash flash-err"><%= error %></div><% } %>
+    <form method="post" action="/aanmelden" class="form">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <label class="field">
+        <span>Gebruikersnaam</span>
+        <input type="text" name="username" value="<%= values.username || '' %>" autocomplete="username" required autofocus>
+      </label>
+      <label class="field">
+        <span>Wachtwoord <em>(min. 8 tekens)</em></span>
+        <input type="password" name="password" autocomplete="new-password" required>
+      </label>
+      <label class="field">
+        <span>Wachtwoord herhalen</span>
+        <input type="password" name="password2" autocomplete="new-password" required>
+      </label>
+      <button class="btn" type="submit">Account aanmaken</button>
+    </form>
+    <p class="auth-alt">Al lid? <a href="/inloggen">Inloggen</a>.</p>
+  </div>
+</main>
+<%- include('partials/foot') %>

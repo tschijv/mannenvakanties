@@ -1,0 +1,26 @@
+START HIER — Mannenvakanties lokaal testen
+==========================================
+
+1. Installeer eenmalig Node.js 22 LTS via https://nodejs.org
+   (gewoon de installer doorlopen).
+
+2. Start de site door te dubbelklikken:
+   - Windows : start.bat
+   - macOS   : start.command
+   - Linux   : start.sh  (of in een terminal:  ./start.sh )
+
+   De eerste keer duurt het even (pakketten installeren).
+   Daarna opent vanzelf http://localhost:3000 in je browser.
+
+3. De EERSTE keer dat je je aanmeldt, word je automatisch beheerder.
+   Maak een jaar aan, upload foto's, typ bijschriften.
+
+4. Stoppen: sluit het zwarte/terminalvenster of druk Ctrl+C.
+
+Alles wat je toevoegt staat in de map  data/  (database + foto's).
+Wil je opnieuw schoon beginnen? Verwijder de map  data/  en start opnieuw.
+
+Voor het echte deployen naar je server: zie README.md.
+
+Let op (macOS): ziet je Mac "kan niet geopend worden, onbekende ontwikkelaar",
+rechtsklik dan op start.command -> Open -> Open. Dat hoeft maar één keer.

@@ -1,0 +1,23 @@
+<%- include('partials/head', { title: 'Inloggen — Mannenvakanties' }) %>
+<%- include('partials/topbar') %>
+
+<main class="auth-wrap">
+  <div class="auth-card">
+    <h1 class="auth-title">Inloggen</h1>
+    <% if (error) { %><div class="flash flash-err"><%= error %></div><% } %>
+    <form method="post" action="/inloggen" class="form">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <label class="field">
+        <span>Gebruikersnaam</span>
+        <input type="text" name="username" value="<%= values.username || '' %>" autocomplete="username" required autofocus>
+      </label>
+      <label class="field">
+        <span>Wachtwoord</span>
+        <input type="password" name="password" autocomplete="current-password" required>
+      </label>
+      <button class="btn" type="submit">Inloggen</button>
+    </form>
+    <p class="auth-alt">Nog geen account? <a href="/aanmelden">Word lid</a>.</p>
+  </div>
+</main>
+<%- include('partials/foot') %>

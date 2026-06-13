@@ -1,0 +1,88 @@
+<%- include('partials/head', { title: 'Beheer — Mannenvakanties' }) %>
+<%- include('partials/topbar') %>
+
+<main class="beheer">
+  <header class="beheer-head">
+    <h1>Beheer</h1>
+    <p>Hallo <strong><%= user.username %></strong><%= user.role === 'admin' ? ' (beheerder)' : '' %>. Maak een jaar aan, upload foto's en schrijf bijschriften. Bewerken en verwijderen kan bij je eigen bijdragen<%= user.role === 'admin' ? '; als beheerder bij alles' : '' %>.</p>
+  </header>
+
+  <!-- Nieuw jaar -->
+  <section class="card">
+    <h2>Nieuw jaar toevoegen</h2>
+    <form method="post" action="/beheer/jaar" class="form row">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <label class="field grow"><span>Jaar of titel</span><input type="text" name="year" placeholder="bv. 2014" required></label>
+      <label class="field grow"><span>Plaats <em>(optioneel)</em></span><input type="text" name="place" placeholder="bv. Maastricht"></label>
+      <label class="field wide"><span>Korte notitie <em>(optioneel)</em></span><input type="text" name="note" placeholder="Een zin over dit jaar"></label>
+      <button class="btn" type="submit">Jaar aanmaken</button>
+    </form>
+  </section>
+
+  <!-- Bestaande jaren -->
+  <% years.forEach(function(y){ var mine = (user.role === 'admin' || user.id === y.created_by); %>
+    <section class="card year-card">
+      <div class="year-card-head">
+        <h2><%= y.year %><% if (y.place) { %> <span class="muted">· <%= y.place %></span><% } %></h2>
+        <span class="count"><%= y.photos.length %> foto<%= y.photos.length === 1 ? '' : '\'s' %></span>
+      </div>
+      <% if (y.note) { %><p class="year-card-note"><%= y.note %></p><% } %>
+
+      <!-- Foto's uploaden -->
+      <form method="post" action="/beheer/jaar/<%= y.id %>/fotos" enctype="multipart/form-data" class="form upload-form">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <label class="field grow"><span>Foto's kiezen <em>(meerdere mag; jpg, png, gif, webp — max 15 MB per stuk)</em></span>
+          <input type="file" name="fotos" accept="image/*" multiple required>
+        </label>
+        <button class="btn" type="submit">Uploaden</button>
+      </form>
+
+      <!-- Foto's met bijschrift -->
+      <% if (y.photos.length) { %>
+        <div class="thumbs">
+          <% y.photos.forEach(function(p){ var pmine = (user.role === 'admin' || user.id === p.uploaded_by); %>
+            <div class="thumb">
+              <img loading="lazy" src="<%= p.src %>" alt="<%= p.caption || 'Foto' %>">
+              <% if (pmine) { %>
+                <form method="post" action="/beheer/foto/<%= p.id %>" class="cap-form">
+                  <input type="hidden" name="_csrf" value="<%= csrf %>">
+                  <input type="text" name="caption" value="<%= p.caption %>" placeholder="Bijschrift…" maxlength="120">
+                  <button class="linkbtn save" type="submit">Opslaan</button>
+                </form>
+                <form method="post" action="/beheer/foto/<%= p.id %>/verwijderen" class="del-form" onsubmit="return confirm('Deze foto verwijderen?');">
+                  <input type="hidden" name="_csrf" value="<%= csrf %>">
+                  <button class="linkbtn danger" type="submit">Verwijderen</button>
+                </form>
+              <% } else { %>
+                <p class="cap-readonly"><%= p.caption || '· · ·' %></p>
+              <% } %>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <p class="muted">Nog geen foto's in dit jaar.</p>
+      <% } %>
+
+      <!-- Jaar bewerken / verwijderen -->
+      <% if (mine) { %>
+        <details class="year-edit">
+          <summary>Jaar bewerken of verwijderen</summary>
+          <form method="post" action="/beheer/jaar/<%= y.id %>" class="form row">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <label class="field grow"><span>Jaar/titel</span><input type="text" name="year" value="<%= y.year %>" required></label>
+            <label class="field grow"><span>Plaats</span><input type="text" name="place" value="<%= y.place %>"></label>
+            <label class="field wide"><span>Notitie</span><input type="text" name="note" value="<%= y.note %>"></label>
+            <button class="btn" type="submit">Opslaan</button>
+          </form>
+          <form method="post" action="/beheer/jaar/<%= y.id %>/verwijderen" onsubmit="return confirm('Het hele jaar \'<%= y.year %>\' en alle foto\'s erin verwijderen?');" class="del-year">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <button class="linkbtn danger" type="submit">Dit jaar verwijderen</button>
+          </form>
+        </details>
+      <% } %>
+    </section>
+  <% }) %>
+
+  <p class="beheer-foot"><a href="/">← Terug naar het album</a></p>
+</main>
+<%- include('partials/foot') %>

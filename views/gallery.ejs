@@ -1,0 +1,110 @@
+<%- include('partials/head', { title: 'Mannenvakanties — het album' }) %>
+
+<!-- COVER -->
+<header class="cover">
+  <div class="cover-frame">
+    <p class="eyebrow">Een gedeeld fotoalbum</p>
+    <h1>Mannen&shy;vakanties</h1>
+    <p class="tagline">Een zoektocht naar het verleden — van een weekendje Antwerpen tot een jaarlijks fenomeen.</p>
+    <span class="label">Reisverslag · sinds 1996</span>
+  </div>
+  <div class="scroll-cue">Bladeren<span></span></div>
+</header>
+
+<!-- JAARBALK + ACCOUNT -->
+<nav class="spine" aria-label="Jaren">
+  <a class="brand" href="/">Mannenvakanties</a>
+  <% years.forEach(function(y){ %>
+    <a href="#jaar-<%= y.id %>" data-year="<%= y.id %>"><%= y.year %></a>
+  <% }) %>
+  <span class="spine-sep" aria-hidden="true"></span>
+  <% if (user) { %>
+    <a href="/beheer" class="spine-account">Beheer</a>
+    <form method="post" action="/uitloggen" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="linkbtn spine-account">Uitloggen</button></form>
+  <% } else { %>
+    <a href="/inloggen" class="spine-account">Inloggen</a>
+    <a href="/aanmelden" class="spine-account spine-cta">Lid worden</a>
+  <% } %>
+</nav>
+
+<% if (flash) { %><div class="flash flash-<%= flash.type %>"><%= flash.msg %></div><% } %>
+
+<!-- INTRO -->
+<section class="intro paper-grain">
+  <div class="intro-inner reveal">
+    <p class="kicker">Het verhaal</p>
+    <p>Ooit begonnen als een weekendje Antwerpen van een handvol jonge historici. Wat een losse afspraak leek, groeide uit tot een jaarlijkse traditie — en tot een stapel foto's die het bewaren waard is.</p>
+    <p class="sig">— de mannen</p>
+    <div class="rule"></div>
+  </div>
+  <% if (!user) { %>
+    <p class="intro-cta reveal">Zelf een jaar of foto's toevoegen? <a href="/aanmelden">Word lid</a> of <a href="/inloggen">log in</a>.</p>
+  <% } %>
+</section>
+
+<!-- JAREN -->
+<main id="album">
+  <% years.forEach(function(y){ %>
+    <section class="year paper-grain" id="jaar-<%= y.id %>">
+      <div class="year-head reveal">
+        <div class="year-num"><%= y.year %></div>
+        <div class="year-meta">
+          <% if (y.place) { %><p class="year-place"><%= y.place %></p><% } %>
+          <% if (y.note) { %><p class="year-note"><%= y.note %></p><% } %>
+        </div>
+        <div class="postmark" aria-hidden="true"><small>MANNEN&middot;VAK</small><b><%= y.year %></b><small>&#9733;</small></div>
+      </div>
+
+      <div class="grid">
+        <% if (y.photos.length) { %>
+          <% y.photos.forEach(function(p){ %>
+            <button class="mount has-photo" type="button"
+                    data-src="<%= p.src %>" data-cap="<%= p.caption %>"
+                    aria-label="Vergroot foto<%= p.caption ? ': ' + p.caption : '' %>">
+              <div class="frame">
+                <span class="corner tl"></span><span class="corner tr"></span>
+                <span class="corner bl"></span><span class="corner br"></span>
+                <img loading="lazy" decoding="async" src="<%= p.src %>" alt="<%= p.caption || 'Foto' %>">
+              </div>
+              <div class="caption"><%= p.caption || '· · ·' %></div>
+            </button>
+          <% }) %>
+        <% } else { %>
+          <% for (var i = 0; i < 3; i++) { %>
+            <div class="mount empty">
+              <div class="frame">
+                <span class="corner tl"></span><span class="corner tr"></span>
+                <span class="corner bl"></span><span class="corner br"></span>
+                <div class="ph">Nog geen foto's</div>
+              </div>
+              <div class="caption">· · ·</div>
+            </div>
+          <% } %>
+        <% } %>
+      </div>
+    </section>
+  <% }) %>
+
+  <% if (!years.length) { %>
+    <section class="year paper-grain"><p class="empty-note">Nog geen jaren. <a href="/aanmelden">Word lid</a> om het eerste toe te voegen.</p></section>
+  <% } %>
+</main>
+
+<!-- COLOFON -->
+<footer class="colophon">
+  <p class="mark">M·V</p>
+  <p>Mannenvakanties — het album</p>
+  <% if (user) { %><p><a href="/beheer">Naar beheer</a></p><% } else { %><p><a href="/aanmelden">Word lid</a> · <a href="/inloggen">Inloggen</a></p><% } %>
+</footer>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Foto vergroot">
+  <button class="close" id="lbClose" aria-label="Sluiten">✕</button>
+  <figure>
+    <img id="lbImg" src="" alt="">
+    <figcaption id="lbCap"></figcaption>
+  </figure>
+</div>
+
+<script src="/gallery.js"></script>
+<%- include('partials/foot') %>
