@@ -353,6 +353,26 @@ app.post('/beheer/leden/:id/rol', requireLogin, requireAdmin, (req, res) => {
   res.redirect('/beheer/leden');
 });
 
+/* lid verwijderen (alleen admin) — foto's en jaren van het lid blijven bewaard */
+app.post('/beheer/leden/:id/verwijderen', requireLogin, requireAdmin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const target = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id);
+  if (!target) return res.redirect('/beheer/leden');
+  if (target.id === res.locals.user.id) {
+    req.session.flash = { type: 'err', msg: 'Je kunt je eigen account niet verwijderen.' };
+    return res.redirect('/beheer/leden');
+  }
+  const tx = db.transaction(() => {
+    db.prepare('UPDATE years  SET created_by  = NULL WHERE created_by  = ?').run(target.id);
+    db.prepare('UPDATE photos SET uploaded_by = NULL WHERE uploaded_by = ?').run(target.id);
+    db.prepare('UPDATE photos SET deleted_by  = NULL WHERE deleted_by  = ?').run(target.id);
+    db.prepare('DELETE FROM users WHERE id = ?').run(target.id);
+  });
+  tx();
+  req.session.flash = { type: 'ok', msg: 'Lid "' + target.username + '" verwijderd. Geüploade foto\'s en jaren blijven bewaard.' };
+  res.redirect('/beheer/leden');
+});
+
 /* ------------------------------------------------------------------ */
 app.use((req, res) => res.status(404).render('login', { values: {}, error: 'Pagina niet gevonden.' }));
 

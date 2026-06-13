@@ -23,6 +23,13 @@
                   <input type="hidden" name="_csrf" value="<%= csrf %>">
                   <button class="linkbtn" type="submit"><%= u.role === 'admin' ? 'Maak lid' : 'Maak beheerder' %></button>
                 </form>
+                <span class="muted"> · </span>
+                <form method="post" action="/beheer/leden/<%= u.id %>/verwijderen" class="inline" onsubmit="return confirm('Lid <%= u.username %> verwijderen? Het account verdwijnt. Geüploade foto\'s en jaren blijven bewaard.');">
+                  <input type="hidden" name="_csrf" value="<%= csrf %>">
+                  <button class="linkbtn danger" type="submit">Verwijderen</button>
+                </form>
+              <% } else { %>
+                <span class="muted">—</span>
               <% } %>
             </td>
           </tr>
