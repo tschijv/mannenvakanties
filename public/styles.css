@@ -208,3 +208,86 @@ a{color:var(--pen);}
 .leden-table { width: 100%; border-collapse: collapse; }
 .leden-table th, .leden-table td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid rgba(0,0,0,.08); }
 .leden-table th { font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; color: var(--muted, #8a7b6c); }
+
+/* ===== PUBLIEKE NAV (tijdlijn / kaart / jaar) ===== */
+.pubnav{position:sticky;top:0;z-index:40;background:linear-gradient(180deg,#21170f,#2c1f15);border-bottom:1px solid rgba(180,138,75,.25);display:flex;align-items:center;gap:12px;padding:10px clamp(14px,4vw,34px);}
+.pubnav-brand{font-weight:900;color:var(--gold-soft);font-size:15px;text-decoration:none;white-space:nowrap;}
+.pubnav-entries{display:flex;gap:4px;margin-left:6px;}
+.pubnav-entry{text-decoration:none;color:rgba(231,220,196,.62);font-family:var(--meta);font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding:6px 12px;border-radius:3px;transition:color .2s,background .2s;}
+.pubnav-entry:hover,.pubnav-entry:focus-visible{color:var(--paper);background:rgba(180,138,75,.16);outline:none;}
+.pubnav-entry.is-active{color:var(--gold-soft);background:rgba(180,138,75,.14);}
+.pubnav-account{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.pubnav-account a,.pubnav-account .linkbtn{text-decoration:none;color:rgba(231,220,196,.7);font-family:var(--meta);font-size:12px;letter-spacing:.1em;background:none;border:none;cursor:pointer;padding:6px 8px;}
+.pubnav-account a:hover,.pubnav-account .linkbtn:hover{color:var(--paper);}
+.pubnav-account .cta{color:var(--gold-soft);border:1px solid rgba(180,138,75,.5);border-radius:3px;}
+.pubnav .inline{display:inline;margin:0;}
+
+/* ===== KLEINE COVER + INGANGEN ===== */
+.cover-sm{min-height:auto;padding:clamp(32px,6vw,62px) 24px;}
+.cover-sm h1{font-size:clamp(38px,8vw,84px);}
+.entries{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:clamp(26px,4vw,40px);}
+.entry-card{display:flex;align-items:center;gap:14px;text-decoration:none;padding:15px 22px;min-width:210px;border:1px solid rgba(180,138,75,.4);border-radius:5px;background:rgba(231,220,196,.04);transition:background .2s,border-color .2s,transform .2s;}
+.entry-card:hover{background:rgba(180,138,75,.16);border-color:rgba(180,138,75,.7);transform:translateY(-2px);}
+.entry-card.is-current{background:rgba(180,138,75,.2);border-color:var(--gold-soft);}
+.entry-ic{font-size:25px;color:var(--gold-soft);line-height:1;}
+.entry-tx{display:flex;flex-direction:column;text-align:left;line-height:1.2;}
+.entry-tx b{font-size:18px;color:var(--gold-soft);}
+.entry-tx small{font-family:var(--meta);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:rgba(231,220,196,.6);margin-top:3px;}
+
+/* ===== TIJDLIJN ===== */
+.timeline-wrap{max-width:760px;margin:0 auto;padding:clamp(40px,8vw,90px) clamp(16px,5vw,28px);}
+.timeline{list-style:none;margin:0;padding:0;position:relative;}
+.timeline::before{content:"";position:absolute;left:71px;top:10px;bottom:10px;width:2px;background:linear-gradient(var(--gold-soft),var(--paper-edge));opacity:.55;}
+.tl-item{margin:0 0 20px;}
+.tl-link{display:grid;grid-template-columns:60px 16px 1fr;align-items:center;text-decoration:none;color:inherit;}
+.tl-year{font-family:var(--meta);font-weight:700;font-size:16px;color:var(--stamp);text-align:right;padding-right:4px;}
+.tl-dot{position:relative;width:16px;height:16px;}
+.tl-dot::before{content:"";position:absolute;left:2px;top:50%;transform:translateY(-50%);width:12px;height:12px;border-radius:50%;background:var(--paper);border:2px solid var(--stamp);box-shadow:0 0 0 4px var(--paper);}
+.tl-card{display:flex;align-items:center;gap:15px;margin-left:14px;padding:11px 14px;background:var(--paper-deep);border:1px solid var(--paper-edge);border-radius:6px;box-shadow:0 2px 8px rgba(40,28,18,.1);transition:transform .2s,box-shadow .2s;}
+.tl-link:hover .tl-card{transform:translateX(3px);box-shadow:0 7px 18px rgba(40,28,18,.18);}
+.tl-cover{flex:none;width:84px;height:62px;border-radius:4px;overflow:hidden;background:var(--paper-edge);display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 4px rgba(255,255,255,.3);}
+.tl-cover img{width:100%;height:100%;object-fit:cover;}
+.tl-cover-empty{color:var(--ink-faint);font-size:18px;}
+.tl-body{display:flex;flex-direction:column;gap:3px;min-width:0;}
+.tl-place{font-family:var(--meta);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--stamp);}
+.tl-note{font-style:italic;color:var(--ink-soft);font-size:14px;line-height:1.4;}
+.tl-count{font-family:var(--meta);font-size:11px;color:var(--ink-faint);letter-spacing:.06em;}
+
+/* ===== KAART ===== */
+.map-wrap{max-width:1100px;margin:0 auto;padding:clamp(24px,5vw,48px) clamp(16px,4vw,32px) clamp(40px,7vw,80px);}
+#map{height:min(70vh,620px);border-radius:8px;border:1px solid var(--paper-edge);box-shadow:0 4px 18px rgba(40,28,18,.18);}
+.leaflet-container{font-family:var(--display);}
+.mv-popup .leaflet-popup-content-wrapper{background:var(--paper);border:1px solid var(--paper-edge);border-radius:6px;box-shadow:0 6px 20px rgba(40,28,18,.3);}
+.mv-popup .leaflet-popup-content{margin:0;}
+.mv-popup .leaflet-popup-tip{background:var(--paper);}
+.pop{display:flex;gap:10px;align-items:center;text-decoration:none;color:var(--ink);padding:8px;width:210px;}
+.pop-cover{flex:none;width:66px;height:50px;border-radius:3px;overflow:hidden;background:var(--paper-edge);}
+.pop-cover img{width:100%;height:100%;object-fit:cover;}
+.pop-body{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.pop-year{font-family:var(--meta);font-weight:700;font-size:15px;color:var(--stamp);}
+.pop-place{font-size:13px;color:var(--ink);}
+.pop-count{font-family:var(--meta);font-size:11px;color:var(--ink-faint);}
+.pop:hover .pop-year{text-decoration:underline;}
+
+/* ===== JAAR-PAGINA (publiek) ===== */
+.year-hero{position:relative;padding:clamp(40px,8vw,88px) clamp(16px,5vw,40px) clamp(28px,5vw,50px);border-bottom:1px solid var(--paper-edge);overflow:hidden;}
+.year-hero-inner{max-width:1100px;margin:0 auto;}
+.year-hero-eyebrow{font-family:var(--meta);font-size:11px;letter-spacing:.2em;text-transform:uppercase;margin:0 0 14px;}
+.year-hero-eyebrow a{color:var(--stamp);text-decoration:none;}
+.year-hero-eyebrow a:hover{text-decoration:underline;}
+.year-hero-num{font-weight:900;font-size:clamp(58px,13vw,140px);line-height:.82;margin:0;color:var(--ink);letter-spacing:-.02em;}
+.year-hero-place{font-family:var(--meta);font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--stamp);margin:14px 0 0;}
+.year-hero-note{font-style:italic;font-size:clamp(16px,2.2vw,22px);line-height:1.5;color:var(--ink-soft);margin:10px 0 0;max-width:48ch;}
+.year-hero-count{font-family:var(--meta);font-size:12px;color:var(--ink-faint);margin:14px 0 0;letter-spacing:.06em;}
+.year-hero .postmark{position:absolute;top:clamp(22px,5vw,46px);right:clamp(16px,5vw,46px);margin:0;}
+.year-back{max-width:1100px;margin:0 auto;padding:clamp(24px,4vw,40px) clamp(16px,5vw,40px) clamp(48px,8vw,90px);font-family:var(--meta);font-size:13px;}
+.year-back a{color:var(--pen);text-decoration:none;}
+.year-back a:hover{text-decoration:underline;}
+.coord-hint{margin:8px 0 0;font-size:12.5px;line-height:1.5;max-width:60ch;}
+
+@media (max-width:560px){
+  .year-hero .postmark{display:none;}
+  .tl-link{grid-template-columns:46px 14px 1fr;}
+  .timeline::before{left:55px;}
+  .tl-cover{width:66px;height:52px;}
+}

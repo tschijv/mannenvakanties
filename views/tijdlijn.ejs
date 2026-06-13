@@ -1,0 +1,55 @@
+<%- include('partials/head', { title: 'Mannenvakanties — tijdlijn' }) %>
+<%- include('partials/pubnav', { active: 'tijdlijn' }) %>
+
+<header class="cover cover-sm">
+  <div class="cover-frame">
+    <p class="eyebrow">Een gedeeld fotoalbum</p>
+    <h1>Mannen&shy;vakanties</h1>
+    <p class="tagline">Van een weekendje weg tot een jaarlijkse traditie — jaar voor jaar.</p>
+    <div class="entries">
+      <a class="entry-card is-current" href="/">
+        <span class="entry-ic" aria-hidden="true">▤</span>
+        <span class="entry-tx"><b>Tijdlijn</b><small>de jaren op een rij</small></span>
+      </a>
+      <a class="entry-card" href="/kaart">
+        <span class="entry-ic" aria-hidden="true">◉</span>
+        <span class="entry-tx"><b>Kaart</b><small>waar het gebeurde</small></span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<main class="timeline-wrap">
+  <% if (years.length) { %>
+    <ol class="timeline">
+      <% years.forEach(function(y){ %>
+        <li class="tl-item">
+          <a class="tl-link" href="/jaar/<%= y.id %>">
+            <span class="tl-year"><%= y.year %></span>
+            <span class="tl-dot" aria-hidden="true"></span>
+            <span class="tl-card">
+              <span class="tl-cover">
+                <% if (y.cover) { %><img loading="lazy" src="<%= y.cover %>" alt=""><% } else { %><span class="tl-cover-empty" aria-hidden="true">✦</span><% } %>
+              </span>
+              <span class="tl-body">
+                <% if (y.place) { %><b class="tl-place"><%= y.place %></b><% } %>
+                <% if (y.note) { %><span class="tl-note"><%= y.note %></span><% } %>
+                <span class="tl-count"><%= y.photo_count %> foto<%= y.photo_count === 1 ? '' : "'s" %> &rarr;</span>
+              </span>
+            </span>
+          </a>
+        </li>
+      <% }) %>
+    </ol>
+  <% } else { %>
+    <p class="empty-note">Nog geen jaren. <a href="/aanmelden">Word lid</a> om het eerste toe te voegen.</p>
+  <% } %>
+</main>
+
+<footer class="colophon">
+  <p class="mark">M&middot;V</p>
+  <p>Mannenvakanties — het album</p>
+</footer>
+
+<script src="/gallery.js"></script>
+<%- include('partials/foot') %>

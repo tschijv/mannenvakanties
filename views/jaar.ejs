@@ -1,0 +1,54 @@
+<%- include('partials/head', { title: year.year + ' — Mannenvakanties' }) %>
+<%- include('partials/pubnav') %>
+
+<header class="year-hero paper-grain">
+  <div class="year-hero-inner">
+    <p class="year-hero-eyebrow"><a href="/">&larr; Tijdlijn</a> &middot; <a href="/kaart">Kaart</a></p>
+    <h1 class="year-hero-num"><%= year.year %></h1>
+    <% if (year.place) { %><p class="year-hero-place"><%= year.place %></p><% } %>
+    <% if (year.note) { %><p class="year-hero-note"><%= year.note %></p><% } %>
+    <p class="year-hero-count"><%= year.photos.length %> foto<%= year.photos.length === 1 ? '' : "'s" %></p>
+  </div>
+  <div class="postmark" aria-hidden="true"><small>MANNEN&middot;VAK</small><b><%= year.year %></b><small>&#9733;</small></div>
+</header>
+
+<main id="album">
+  <section class="year paper-grain">
+    <div class="grid">
+      <% if (year.photos.length) { %>
+        <% year.photos.forEach(function(p){ %>
+          <button class="mount has-photo" type="button"
+                  data-src="<%= p.src %>" data-cap="<%= p.caption %>"
+                  aria-label="Vergroot foto<%= p.caption ? ': ' + p.caption : '' %>">
+            <div class="frame">
+              <span class="corner tl"></span><span class="corner tr"></span>
+              <span class="corner bl"></span><span class="corner br"></span>
+              <img loading="lazy" decoding="async" src="<%= p.src %>" alt="<%= p.caption || 'Foto' %>">
+            </div>
+            <div class="caption"><%= p.caption || '· · ·' %></div>
+          </button>
+        <% }) %>
+      <% } else { %>
+        <p class="empty-note">Nog geen foto's in dit jaar.</p>
+      <% } %>
+    </div>
+  </section>
+
+  <p class="year-back"><a href="/">&larr; Terug naar de tijdlijn</a> &middot; <a href="/kaart">naar de kaart</a></p>
+</main>
+
+<footer class="colophon">
+  <p class="mark">M&middot;V</p>
+  <p>Mannenvakanties — het album</p>
+</footer>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Foto vergroot">
+  <button class="close" id="lbClose" aria-label="Sluiten">✕</button>
+  <figure>
+    <img id="lbImg" src="" alt="">
+    <figcaption id="lbCap"></figcaption>
+  </figure>
+</div>
+
+<script src="/gallery.js"></script>
+<%- include('partials/foot') %>

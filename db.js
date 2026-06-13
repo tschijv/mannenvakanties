@@ -61,6 +61,10 @@ ensureColumn('photos', 'deleted', 'INTEGER NOT NULL DEFAULT 0');
 ensureColumn('photos', 'deleted_at', 'TEXT');
 ensureColumn('photos', 'deleted_by', 'INTEGER');
 
+/* Coördinaten per jaar, voor de kaart-ingang (mogen leeg zijn) */
+ensureColumn('years', 'lat', 'REAL');
+ensureColumn('years', 'lng', 'REAL');
+
 /* ------------------------------------------------------------------ */
 /*  Seed: de drie bestaande jaren (alleen als 'years' nog leeg is)     */
 /* ------------------------------------------------------------------ */
@@ -84,6 +88,7 @@ const SEED = [
     place: 'Spa · Moulin du Rahier',
     note: 'De Ardennen als nieuwe pleisterplaats — een molen, een dorp, en alle tijd.',
     folder: '1997%20-%20Spa,%20Moulin%20du%20Rahier',
+    lat: 50.2861, lng: 5.7806,
     photos: [
       '4117731889_5fa82dcb44_o','4117732177_947df0d148_o','4117732329_68a529c111_o',
       '4117732479_131069c300_o','4117732927_b00426cc56_o','4117733257_1cd22a659f_o',
@@ -100,6 +105,7 @@ const SEED = [
     place: 'Verdun',
     note: 'Tussen de slagvelden en forten — het verleden waar de mannen het ooit om begonnen.',
     folder: '2003%20-%20Verdun',
+    lat: 49.1599, lng: 5.3828,
     photos: [
       { file: 'Image-DB031F07A40511D7', caption: '' },
       { file: 'Image-DB03BBFAA40511D7', caption: '' },
@@ -125,16 +131,17 @@ const SEED = [
     place: 'Waimes',
     note: 'Terug in de Ardennen — inmiddels een ingespeelde traditie, en de grootste reeks.',
     folder: '2009%20-%20Waimes',
+    lat: 50.4150, lng: 6.1108,
     photos: reeks2009()
   }
 ];
 
 function seed() {
-  const insYear = db.prepare('INSERT INTO years (year, place, note) VALUES (?, ?, ?)');
+  const insYear = db.prepare('INSERT INTO years (year, place, note, lat, lng) VALUES (?, ?, ?, ?, ?)');
   const insPhoto = db.prepare('INSERT INTO photos (year_id, src, caption, sort) VALUES (?, ?, ?, ?)');
   const tx = db.transaction(() => {
     for (const y of SEED) {
-      const { lastInsertRowid } = insYear.run(y.year, y.place, y.note);
+      const { lastInsertRowid } = insYear.run(y.year, y.place, y.note, y.lat ?? null, y.lng ?? null);
       y.photos.forEach((p, i) => insPhoto.run(lastInsertRowid, xs(y.folder, p.file, p.ext), p.caption, i));
     }
   });
@@ -144,6 +151,13 @@ function seed() {
 if (db.prepare('SELECT COUNT(*) AS n FROM years').get().n === 0) {
   seed();
   console.log('Database gevuld met de drie bestaande jaren.');
+}
+
+// Backfill: zet coördinaten voor de drie oorspronkelijke jaren als ze nog leeg zijn
+// (zodat bestaande databases ook meteen op de kaart verschijnen).
+{
+  const setCoords = db.prepare('UPDATE years SET lat = ?, lng = ? WHERE year = ? AND lat IS NULL');
+  for (const y of SEED) if (y.lat != null) setCoords.run(y.lat, y.lng, y.year);
 }
 
 // Eenmalige reparatie: de IMGP-foto's van 2003 Verdun staan op de server als .JPG

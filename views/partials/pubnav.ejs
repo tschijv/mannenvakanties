@@ -1,0 +1,17 @@
+<nav class="pubnav">
+  <a class="pubnav-brand" href="/">Mannenvakanties</a>
+  <div class="pubnav-entries">
+    <a href="/" class="pubnav-entry<%= (typeof active !== 'undefined' && active === 'tijdlijn') ? ' is-active' : '' %>">Tijdlijn</a>
+    <a href="/kaart" class="pubnav-entry<%= (typeof active !== 'undefined' && active === 'kaart') ? ' is-active' : '' %>">Kaart</a>
+  </div>
+  <div class="pubnav-account">
+    <% if (user) { %>
+      <a href="/beheer">Beheer</a>
+      <form method="post" action="/uitloggen" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="linkbtn">Uitloggen</button></form>
+    <% } else { %>
+      <a href="/inloggen">Inloggen</a>
+      <a href="/aanmelden" class="cta">Lid worden</a>
+    <% } %>
+  </div>
+</nav>
+<% if (flash) { %><div class="flash flash-<%= flash.type %>"><%= flash.msg %></div><% } %>

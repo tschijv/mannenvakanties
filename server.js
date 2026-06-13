@@ -109,18 +109,37 @@ const upload = multer({
 /* ------------------------------------------------------------------ */
 /*  Helpers om jaren + foto's op te halen                              */
 /* ------------------------------------------------------------------ */
-function allYearsWithPhotos() {
-  const years = db.prepare('SELECT * FROM years ORDER BY year ASC, id ASC').all();
-  const getPhotos = db.prepare('SELECT * FROM photos WHERE year_id = ? AND deleted = 0 ORDER BY sort ASC, id ASC');
-  for (const y of years) y.photos = getPhotos.all(y.id);
-  return years;
+function yearsOverview() {
+  return db.prepare(
+    'SELECT y.*, ' +
+    '(SELECT COUNT(*) FROM photos p WHERE p.year_id = y.id AND p.deleted = 0) AS photo_count, ' +
+    '(SELECT p.src FROM photos p WHERE p.year_id = y.id AND p.deleted = 0 ORDER BY p.sort ASC, p.id ASC LIMIT 1) AS cover ' +
+    'FROM years y ORDER BY y.year ASC, y.id ASC'
+  ).all();
+}
+
+function num(v) {
+  const n = parseFloat(String(v == null ? '' : v).replace(',', '.').trim());
+  return Number.isFinite(n) ? n : null;
 }
 
 /* ------------------------------------------------------------------ */
-/*  Publieke galerij                                                   */
+/*  Publieke ingangen: tijdlijn, kaart, en losse jaar-pagina's         */
 /* ------------------------------------------------------------------ */
 app.get('/', (req, res) => {
-  res.render('gallery', { years: allYearsWithPhotos() });
+  res.render('tijdlijn', { years: yearsOverview() });
+});
+
+app.get('/kaart', (req, res) => {
+  const years = yearsOverview().filter((y) => y.lat != null && y.lng != null);
+  res.render('kaart', { years });
+});
+
+app.get('/jaar/:id', (req, res) => {
+  const year = db.prepare('SELECT * FROM years WHERE id = ?').get(req.params.id);
+  if (!year) return res.redirect('/');
+  year.photos = db.prepare('SELECT * FROM photos WHERE year_id = ? AND deleted = 0 ORDER BY sort ASC, id ASC').all(year.id);
+  res.render('jaar', { year });
 });
 
 /* ------------------------------------------------------------------ */
@@ -213,8 +232,8 @@ app.post('/beheer/jaar', requireLogin, (req, res) => {
   const place = String(req.body.place || '').trim();
   const note = String(req.body.note || '').trim();
   if (!year) { req.session.flash = { type: 'err', msg: 'Vul een jaar of titel in.' }; return res.redirect('/beheer'); }
-  const info = db.prepare('INSERT INTO years (year, place, note, created_by) VALUES (?, ?, ?, ?)')
-    .run(year, place, note, req.session.userId);
+  const info = db.prepare('INSERT INTO years (year, place, note, lat, lng, created_by) VALUES (?, ?, ?, ?, ?, ?)')
+    .run(year, place, note, num(req.body.lat), num(req.body.lng), req.session.userId);
   req.session.flash = { type: 'ok', msg: 'Jaar "' + year + '" aangemaakt. Voeg hieronder foto\'s toe.' };
   res.redirect('/beheer/jaar/' + info.lastInsertRowid);
 });
@@ -225,8 +244,8 @@ app.post('/beheer/jaar/:id', requireLogin, (req, res) => {
   const y = db.prepare('SELECT * FROM years WHERE id = ?').get(req.params.id);
   if (!y) return res.redirect('/beheer');
   if (!canEdit(res.locals.user, y.created_by)) { req.session.flash = { type: 'err', msg: 'Je mag alleen je eigen jaren bewerken.' }; return res.redirect('/beheer/jaar/' + y.id); }
-  db.prepare('UPDATE years SET year = ?, place = ?, note = ? WHERE id = ?')
-    .run(String(req.body.year || y.year).trim(), String(req.body.place || '').trim(), String(req.body.note || '').trim(), y.id);
+  db.prepare('UPDATE years SET year = ?, place = ?, note = ?, lat = ?, lng = ? WHERE id = ?')
+    .run(String(req.body.year || y.year).trim(), String(req.body.place || '').trim(), String(req.body.note || '').trim(), num(req.body.lat), num(req.body.lng), y.id);
   req.session.flash = { type: 'ok', msg: 'Jaar bijgewerkt.' };
   res.redirect('/beheer/jaar/' + y.id);
 });
