@@ -49,12 +49,25 @@ CREATE TABLE IF NOT EXISTS photos (
 `);
 
 /* ------------------------------------------------------------------ */
+/*  Migratie: kolommen voor 'zacht verwijderen' (herstelbaar)          */
+/* ------------------------------------------------------------------ */
+function ensureColumn(table, column, definition) {
+  const cols = db.prepare('PRAGMA table_info(' + table + ')').all();
+  if (!cols.some((c) => c.name === column)) {
+    db.exec('ALTER TABLE ' + table + ' ADD COLUMN ' + column + ' ' + definition);
+  }
+}
+ensureColumn('photos', 'deleted', 'INTEGER NOT NULL DEFAULT 0');
+ensureColumn('photos', 'deleted_at', 'TEXT');
+ensureColumn('photos', 'deleted_by', 'INTEGER');
+
+/* ------------------------------------------------------------------ */
 /*  Seed: de drie bestaande jaren (alleen als 'years' nog leeg is)     */
 /* ------------------------------------------------------------------ */
 
-function xs(folder, file) {
+function xs(folder, file, ext) {
   const BASE = 'https://tschijv.home.xs4all.nl/Mannenvakanties/Fotos/';
-  return BASE + folder + '/slides/' + encodeURIComponent(file) + '.jpg';
+  return BASE + folder + '/slides/' + encodeURIComponent(file) + '.' + (ext || 'jpg');
 }
 
 function reeks2009() {
@@ -91,20 +104,20 @@ const SEED = [
       { file: 'Image-DB031F07A40511D7', caption: '' },
       { file: 'Image-DB03BBFAA40511D7', caption: '' },
       { file: 'Image-DB0315B0A40511D7', caption: '' },
-      { file: 'keesIMGP0083',          caption: 'Kees' },
-      { file: 'antonIMGP00841',         caption: 'Anton' },
-      { file: 'stefanIMGP0085',         caption: 'Stefan' },
-      { file: 'mannenIMGP0090',         caption: 'De mannen' },
-      { file: 'ondergrondIMGP0081',     caption: 'Ondergronds' },
-      { file: 'stefansonnyIMGP0082',    caption: 'Stefan & Sonny' },
-      { file: 'stefanbasIMGP0086',      caption: 'Stefan & Bas' },
-      { file: 'momentomoriIMGP0088',    caption: 'Memento mori' },
-      { file: 'rikIMGP0098',            caption: 'Rik' },
-      { file: 'rikmetflesIMGP0102',     caption: 'Rik met fles' },
-      { file: 'sonnymetflesIMGP0103',   caption: 'Sonny met fles' },
-      { file: 'redeyehancoIMGP0110',    caption: 'Hanco' },
-      { file: 'moderneheldenIMGP0120',  caption: 'Moderne helden' },
-      { file: 'smoke-earantonIMGP0115', caption: 'Anton' }
+      { file: 'keesIMGP0083',          caption: 'Kees',           ext: 'JPG' },
+      { file: 'antonIMGP00841',         caption: 'Anton',          ext: 'JPG' },
+      { file: 'stefanIMGP0085',         caption: 'Stefan',         ext: 'JPG' },
+      { file: 'mannenIMGP0090',         caption: 'De mannen',      ext: 'JPG' },
+      { file: 'ondergrondIMGP0081',     caption: 'Ondergronds',    ext: 'JPG' },
+      { file: 'stefansonnyIMGP0082',    caption: 'Stefan & Sonny', ext: 'JPG' },
+      { file: 'stefanbasIMGP0086',      caption: 'Stefan & Bas',   ext: 'JPG' },
+      { file: 'momentomoriIMGP0088',    caption: 'Memento mori',   ext: 'JPG' },
+      { file: 'rikIMGP0098',            caption: 'Rik',            ext: 'JPG' },
+      { file: 'rikmetflesIMGP0102',     caption: 'Rik met fles',   ext: 'JPG' },
+      { file: 'sonnymetflesIMGP0103',   caption: 'Sonny met fles', ext: 'JPG' },
+      { file: 'redeyehancoIMGP0110',    caption: 'Hanco',          ext: 'JPG' },
+      { file: 'moderneheldenIMGP0120',  caption: 'Moderne helden', ext: 'JPG' },
+      { file: 'smoke-earantonIMGP0115', caption: 'Anton',          ext: 'JPG' }
     ]
   },
   {
@@ -122,7 +135,7 @@ function seed() {
   const tx = db.transaction(() => {
     for (const y of SEED) {
       const { lastInsertRowid } = insYear.run(y.year, y.place, y.note);
-      y.photos.forEach((p, i) => insPhoto.run(lastInsertRowid, xs(y.folder, p.file), p.caption, i));
+      y.photos.forEach((p, i) => insPhoto.run(lastInsertRowid, xs(y.folder, p.file, p.ext), p.caption, i));
     }
   });
   tx();
@@ -132,5 +145,13 @@ if (db.prepare('SELECT COUNT(*) AS n FROM years').get().n === 0) {
   seed();
   console.log('Database gevuld met de drie bestaande jaren.');
 }
+
+// Eenmalige reparatie: de IMGP-foto's van 2003 Verdun staan op de server als .JPG
+// (hoofdletters). Oudere databases hadden hier .jpg en laadden daardoor niet.
+// Deze update is idempotent (raakt alleen nog-niet-herstelde regels).
+db.prepare(
+  "UPDATE photos SET src = substr(src, 1, length(src) - 4) || '.JPG' " +
+  "WHERE src LIKE '%Verdun/slides/%IMGP%.jpg' AND src NOT GLOB '*.JPG'"
+).run();
 
 module.exports = { db, DATA_DIR, UPLOAD_DIR };

@@ -14,6 +14,23 @@ const { db, UPLOAD_DIR } = require('./db');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Vaste beheerders: namen uit ADMIN_USERS (komma-gescheiden) zijn altijd admin.
+// Bijvoorbeeld in de systemd-service: Environment=ADMIN_USERS=Toine,Anton
+const ADMIN_USERS = (process.env.ADMIN_USERS || 'Toine,Anton')
+  .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+function isDesignatedAdmin(username) {
+  return ADMIN_USERS.includes(String(username || '').trim().toLowerCase());
+}
+// Bij opstarten: bestaande gebruikers met zo'n naam alsnog beheerder maken.
+if (ADMIN_USERS.length) {
+  const promote = db.prepare("UPDATE users SET role = 'admin' WHERE lower(username) = ? AND role <> 'admin'");
+  for (const name of ADMIN_USERS) promote.run(name);
+}
+
+// Achter een reverse proxy (nginx/Apache met https): vertrouw de proxy,
+// anders worden 'secure' sessiecookies niet verstuurd en lukt inloggen niet.
+if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1);
+
 /* ------------------------------------------------------------------ */
 /*  Basis                                                              */
 /* ------------------------------------------------------------------ */
@@ -94,7 +111,7 @@ const upload = multer({
 /* ------------------------------------------------------------------ */
 function allYearsWithPhotos() {
   const years = db.prepare('SELECT * FROM years ORDER BY year ASC, id ASC').all();
-  const getPhotos = db.prepare('SELECT * FROM photos WHERE year_id = ? ORDER BY sort ASC, id ASC');
+  const getPhotos = db.prepare('SELECT * FROM photos WHERE year_id = ? AND deleted = 0 ORDER BY sort ASC, id ASC');
   for (const y of years) y.photos = getPhotos.all(y.id);
   return years;
 }
@@ -129,8 +146,9 @@ app.post('/aanmelden', (req, res) => {
 
   const hash = bcrypt.hashSync(password, 12);
   const isFirst = db.prepare('SELECT COUNT(*) AS n FROM users').get().n === 0;
+  const role = (isFirst || isDesignatedAdmin(username)) ? 'admin' : 'member';
   const info = db.prepare('INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)')
-    .run(username, hash, isFirst ? 'admin' : 'member');
+    .run(username, hash, role);
 
   req.session.userId = info.lastInsertRowid;
   req.session.flash = { type: 'ok', msg: 'Welkom, ' + username + '! Je bent nu lid.' };
@@ -160,8 +178,32 @@ app.post('/uitloggen', (req, res) => {
 /* ------------------------------------------------------------------ */
 /*  Beheer (alleen ingelogd)                                           */
 /* ------------------------------------------------------------------ */
+
+function requireAdmin(req, res, next) {
+  if (!res.locals.user || res.locals.user.role !== 'admin') {
+    req.session.flash = { type: 'err', msg: 'Alleen een beheerder kan dit.' };
+    return res.redirect('/beheer');
+  }
+  next();
+}
+
+/* Overzicht: lijst van jaren (zonder de foto's zelf) */
 app.get('/beheer', requireLogin, (req, res) => {
-  res.render('beheer', { years: allYearsWithPhotos() });
+  const years = db.prepare(
+    'SELECT y.*, ' +
+    '(SELECT COUNT(*) FROM photos p WHERE p.year_id = y.id AND p.deleted = 0) AS photo_count ' +
+    'FROM years y ORDER BY y.year ASC, y.id ASC'
+  ).all();
+  const trashCount = db.prepare('SELECT COUNT(*) AS n FROM photos WHERE deleted = 1').get().n;
+  res.render('beheer', { years, trashCount });
+});
+
+/* Eén jaar: pas hier worden de foto's getoond */
+app.get('/beheer/jaar/:id', requireLogin, (req, res) => {
+  const year = db.prepare('SELECT * FROM years WHERE id = ?').get(req.params.id);
+  if (!year) { req.session.flash = { type: 'err', msg: 'Jaar niet gevonden.' }; return res.redirect('/beheer'); }
+  year.photos = db.prepare('SELECT * FROM photos WHERE year_id = ? AND deleted = 0 ORDER BY sort ASC, id ASC').all(year.id);
+  res.render('beheer-jaar', { year });
 });
 
 /* jaar aanmaken */
@@ -171,10 +213,10 @@ app.post('/beheer/jaar', requireLogin, (req, res) => {
   const place = String(req.body.place || '').trim();
   const note = String(req.body.note || '').trim();
   if (!year) { req.session.flash = { type: 'err', msg: 'Vul een jaar of titel in.' }; return res.redirect('/beheer'); }
-  db.prepare('INSERT INTO years (year, place, note, created_by) VALUES (?, ?, ?, ?)')
+  const info = db.prepare('INSERT INTO years (year, place, note, created_by) VALUES (?, ?, ?, ?)')
     .run(year, place, note, req.session.userId);
-  req.session.flash = { type: 'ok', msg: 'Jaar "' + year + '" aangemaakt.' };
-  res.redirect('/beheer');
+  req.session.flash = { type: 'ok', msg: 'Jaar "' + year + '" aangemaakt. Voeg hieronder foto\'s toe.' };
+  res.redirect('/beheer/jaar/' + info.lastInsertRowid);
 });
 
 /* jaar bijwerken (eigenaar/admin) */
@@ -182,19 +224,18 @@ app.post('/beheer/jaar/:id', requireLogin, (req, res) => {
   if (!checkCsrf(req, res)) return;
   const y = db.prepare('SELECT * FROM years WHERE id = ?').get(req.params.id);
   if (!y) return res.redirect('/beheer');
-  if (!canEdit(res.locals.user, y.created_by)) { req.session.flash = { type: 'err', msg: 'Je mag alleen je eigen jaren bewerken.' }; return res.redirect('/beheer'); }
+  if (!canEdit(res.locals.user, y.created_by)) { req.session.flash = { type: 'err', msg: 'Je mag alleen je eigen jaren bewerken.' }; return res.redirect('/beheer/jaar/' + y.id); }
   db.prepare('UPDATE years SET year = ?, place = ?, note = ? WHERE id = ?')
     .run(String(req.body.year || y.year).trim(), String(req.body.place || '').trim(), String(req.body.note || '').trim(), y.id);
   req.session.flash = { type: 'ok', msg: 'Jaar bijgewerkt.' };
-  res.redirect('/beheer');
+  res.redirect('/beheer/jaar/' + y.id);
 });
 
-/* jaar verwijderen (eigenaar/admin) — verwijdert ook de geüploade bestanden */
-app.post('/beheer/jaar/:id/verwijderen', requireLogin, (req, res) => {
+/* jaar verwijderen (alleen admin) — dit verwijdert ook de foto's definitief */
+app.post('/beheer/jaar/:id/verwijderen', requireLogin, requireAdmin, (req, res) => {
   if (!checkCsrf(req, res)) return;
   const y = db.prepare('SELECT * FROM years WHERE id = ?').get(req.params.id);
   if (!y) return res.redirect('/beheer');
-  if (!canEdit(res.locals.user, y.created_by)) { req.session.flash = { type: 'err', msg: 'Je mag alleen je eigen jaren verwijderen.' }; return res.redirect('/beheer'); }
   db.prepare('DELETE FROM years WHERE id = ?').run(y.id); // photos cascade
   fs.rmSync(path.join(UPLOAD_DIR, String(y.id)), { recursive: true, force: true });
   req.session.flash = { type: 'ok', msg: 'Jaar verwijderd.' };
@@ -207,9 +248,10 @@ app.post('/beheer/jaar/:id/fotos', requireLogin, (req, res) => {
     if (!checkCsrf(req, res)) return;
     const y = db.prepare('SELECT * FROM years WHERE id = ?').get(req.params.id);
     if (!y) return res.redirect('/beheer');
-    if (err) { req.session.flash = { type: 'err', msg: 'Uploaden mislukte: ' + err.message }; return res.redirect('/beheer'); }
+    const back = '/beheer/jaar/' + y.id;
+    if (err) { req.session.flash = { type: 'err', msg: 'Uploaden mislukte: ' + err.message }; return res.redirect(back); }
     const files = req.files || [];
-    if (!files.length) { req.session.flash = { type: 'err', msg: 'Geen geldige afbeeldingen gekozen (alleen jpg, png, gif, webp; max 15 MB per stuk).' }; return res.redirect('/beheer'); }
+    if (!files.length) { req.session.flash = { type: 'err', msg: 'Geen geldige afbeeldingen gekozen (alleen jpg, png, gif, webp; max 15 MB per stuk).' }; return res.redirect(back); }
 
     const startSort = (db.prepare('SELECT COALESCE(MAX(sort), -1) AS m FROM photos WHERE year_id = ?').get(y.id).m) + 1;
     const ins = db.prepare('INSERT INTO photos (year_id, src, caption, uploaded_by, sort) VALUES (?, ?, ?, ?, ?)');
@@ -218,7 +260,7 @@ app.post('/beheer/jaar/:id/fotos', requireLogin, (req, res) => {
     });
     tx();
     req.session.flash = { type: 'ok', msg: files.length + ' foto(\'s) toegevoegd aan ' + y.year + '.' };
-    res.redirect('/beheer');
+    res.redirect(back);
   });
 });
 
@@ -227,22 +269,69 @@ app.post('/beheer/foto/:id', requireLogin, (req, res) => {
   if (!checkCsrf(req, res)) return;
   const p = db.prepare('SELECT * FROM photos WHERE id = ?').get(req.params.id);
   if (!p) return res.redirect('/beheer');
-  if (!canEdit(res.locals.user, p.uploaded_by)) { req.session.flash = { type: 'err', msg: 'Je mag alleen je eigen foto\'s bewerken.' }; return res.redirect('/beheer'); }
+  if (!canEdit(res.locals.user, p.uploaded_by)) { req.session.flash = { type: 'err', msg: 'Je mag alleen je eigen foto\'s bewerken.' }; return res.redirect('/beheer/jaar/' + p.year_id); }
   db.prepare('UPDATE photos SET caption = ? WHERE id = ?').run(String(req.body.caption || '').trim(), p.id);
   req.session.flash = { type: 'ok', msg: 'Bijschrift opgeslagen.' };
-  res.redirect('/beheer');
+  res.redirect('/beheer/jaar/' + p.year_id);
 });
 
-/* foto verwijderen (uploader/admin) */
+/* foto ZACHT verwijderen (uploader/admin) — blijft herstelbaar in de prullenbak */
 app.post('/beheer/foto/:id/verwijderen', requireLogin, (req, res) => {
   if (!checkCsrf(req, res)) return;
   const p = db.prepare('SELECT * FROM photos WHERE id = ?').get(req.params.id);
   if (!p) return res.redirect('/beheer');
-  if (!canEdit(res.locals.user, p.uploaded_by)) { req.session.flash = { type: 'err', msg: 'Je mag alleen je eigen foto\'s verwijderen.' }; return res.redirect('/beheer'); }
-  db.prepare('DELETE FROM photos WHERE id = ?').run(p.id);
-  if (p.src.startsWith('/uploads/')) fs.rmSync(path.join(__dirname, 'data', p.src.replace('/uploads/', 'uploads/')), { force: true });
-  req.session.flash = { type: 'ok', msg: 'Foto verwijderd.' };
-  res.redirect('/beheer');
+  if (!canEdit(res.locals.user, p.uploaded_by)) { req.session.flash = { type: 'err', msg: 'Je mag alleen je eigen foto\'s verwijderen.' }; return res.redirect('/beheer/jaar/' + p.year_id); }
+  db.prepare("UPDATE photos SET deleted = 1, deleted_at = datetime('now'), deleted_by = ? WHERE id = ?").run(req.session.userId, p.id);
+  req.session.flash = { type: 'ok', msg: 'Foto verwijderd. Een beheerder kan hem nog herstellen.' };
+  res.redirect('/beheer/jaar/' + p.year_id);
+});
+
+/* ----- Prullenbak (alleen admin): herstellen of definitief verwijderen ----- */
+app.get('/beheer/prullenbak', requireLogin, requireAdmin, (req, res) => {
+  const photos = db.prepare(
+    'SELECT p.*, y.year AS year_label, u.username AS deleted_by_name ' +
+    'FROM photos p ' +
+    'LEFT JOIN years y ON y.id = p.year_id ' +
+    'LEFT JOIN users u ON u.id = p.deleted_by ' +
+    'WHERE p.deleted = 1 ORDER BY p.deleted_at DESC, p.id DESC'
+  ).all();
+  res.render('prullenbak', { photos });
+});
+
+app.post('/beheer/foto/:id/herstellen', requireLogin, requireAdmin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const p = db.prepare('SELECT * FROM photos WHERE id = ?').get(req.params.id);
+  if (p) db.prepare('UPDATE photos SET deleted = 0, deleted_at = NULL, deleted_by = NULL WHERE id = ?').run(p.id);
+  req.session.flash = { type: 'ok', msg: 'Foto hersteld.' };
+  res.redirect('/beheer/prullenbak');
+});
+
+app.post('/beheer/foto/:id/definitief', requireLogin, requireAdmin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const p = db.prepare('SELECT * FROM photos WHERE id = ?').get(req.params.id);
+  if (p) {
+    db.prepare('DELETE FROM photos WHERE id = ?').run(p.id);
+    if (p.src.startsWith('/uploads/')) fs.rmSync(path.join(__dirname, 'data', p.src.replace('/uploads/', 'uploads/')), { force: true });
+  }
+  req.session.flash = { type: 'ok', msg: 'Foto definitief verwijderd.' };
+  res.redirect('/beheer/prullenbak');
+});
+
+/* ----- Leden (alleen admin): beheerders aanwijzen ----- */
+app.get('/beheer/leden', requireLogin, requireAdmin, (req, res) => {
+  const users = db.prepare('SELECT id, username, role, created_at FROM users ORDER BY created_at ASC, id ASC').all();
+  res.render('leden', { users });
+});
+
+app.post('/beheer/leden/:id/rol', requireLogin, requireAdmin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const target = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id);
+  if (!target) return res.redirect('/beheer/leden');
+  if (target.id === res.locals.user.id) { req.session.flash = { type: 'err', msg: 'Je kunt je eigen rol niet wijzigen (om uitsluiting te voorkomen).' }; return res.redirect('/beheer/leden'); }
+  const newRole = target.role === 'admin' ? 'member' : 'admin';
+  db.prepare('UPDATE users SET role = ? WHERE id = ?').run(newRole, target.id);
+  req.session.flash = { type: 'ok', msg: target.username + ' is nu ' + (newRole === 'admin' ? 'beheerder' : 'lid') + '.' };
+  res.redirect('/beheer/leden');
 });
 
 /* ------------------------------------------------------------------ */

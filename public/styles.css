@@ -186,3 +186,25 @@ a{color:var(--pen);}
   *,*::before,*::after{animation:none !important;transition:none !important;}
   .reveal{opacity:1;transform:none;}
 }
+
+/* ---- Beheer: jarenlijst, prullenbak, leden ---- */
+.beheer-adminlinks { margin-top: .4rem; font-size: .95rem; }
+.beheer-adminlinks a { color: var(--ink, #5b4636); font-weight: 600; }
+
+.year-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
+.year-row { display: flex; align-items: center; gap: .75rem; padding: .65rem .8rem; border: 1px solid rgba(0,0,0,.08);
+  border-radius: 12px; background: rgba(255,255,255,.5); }
+.year-row-main { flex: 1; display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
+  text-decoration: none; color: inherit; min-width: 0; }
+.year-row-title { font-weight: 700; font-size: 1.1rem; }
+.year-row-count { color: var(--muted, #8a7b6c); font-size: .9rem; white-space: nowrap; }
+.year-row:hover { background: rgba(255,255,255,.85); }
+.btn.small { padding: .35rem .7rem; font-size: .9rem; white-space: nowrap; }
+
+.trash-meta { font-size: .8rem; color: var(--muted, #8a7b6c); margin: .25rem 0 .4rem; }
+.trash-tools { display: flex; gap: .6rem; flex-wrap: wrap; }
+.inline { display: inline; margin: 0; }
+
+.leden-table { width: 100%; border-collapse: collapse; }
+.leden-table th, .leden-table td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid rgba(0,0,0,.08); }
+.leden-table th { font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; color: var(--muted, #8a7b6c); }

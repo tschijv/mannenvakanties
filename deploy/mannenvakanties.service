@@ -1,0 +1,30 @@
+# systemd-service voor Mannenvakanties
+# Plaats dit bestand als:  /etc/systemd/system/mannenvakanties.service
+# Pas de regels met << >> aan jouw situatie aan.
+
+[Unit]
+Description=Mannenvakanties album
+After=network.target
+
+[Service]
+Type=simple
+# Een eigen gebruiker (geen root). Maak die eventueel met:  sudo useradd -r -s /usr/sbin/nologin mannen
+User=<<gebruiker, bv. mannen>>
+WorkingDirectory=<<pad, bv. /var/www/mannenvakanties>>
+# Controleer het pad naar node met:  which node
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=5
+
+Environment=NODE_ENV=production
+Environment=PORT=3000
+# Zet hier een lange, willekeurige geheime string (bv. uit:  openssl rand -hex 32 )
+Environment=SESSION_SECRET=<<lange-willekeurige-string>>
+
+# Wat extra afscherming
+NoNewPrivileges=true
+ProtectSystem=full
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

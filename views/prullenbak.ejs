@@ -1,0 +1,37 @@
+<%- include('partials/head', { title: 'Prullenbak — Beheer' }) %>
+<%- include('partials/topbar') %>
+
+<main class="beheer">
+  <p class="beheer-foot"><a href="/beheer">&larr; Terug naar beheer</a></p>
+  <header class="beheer-head">
+    <h1>Prullenbak</h1>
+    <p>Foto's die leden hebben verwijderd. Als beheerder kun je ze herstellen of definitief weggooien.</p>
+  </header>
+
+  <section class="card">
+    <% if (photos.length) { %>
+      <div class="thumbs">
+        <% photos.forEach(function(p){ %>
+          <div class="thumb">
+            <img loading="lazy" src="<%= p.src %>" alt="<%= p.caption || 'Foto' %>">
+            <p class="cap-readonly"><%= p.caption || '· · ·' %></p>
+            <p class="trash-meta"><%= p.year_label || 'onbekend jaar' %><% if (p.deleted_by_name) { %> &middot; door <%= p.deleted_by_name %><% } %><% if (p.deleted_at) { %> &middot; <%= p.deleted_at %><% } %></p>
+            <div class="trash-tools">
+              <form method="post" action="/beheer/foto/<%= p.id %>/herstellen" class="inline">
+                <input type="hidden" name="_csrf" value="<%= csrf %>">
+                <button class="linkbtn save" type="submit">Herstellen</button>
+              </form>
+              <form method="post" action="/beheer/foto/<%= p.id %>/definitief" class="inline" onsubmit="return confirm('Deze foto definitief verwijderen? Dit kan niet ongedaan worden gemaakt.');">
+                <input type="hidden" name="_csrf" value="<%= csrf %>">
+                <button class="linkbtn danger" type="submit">Definitief weg</button>
+              </form>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <p class="muted">De prullenbak is leeg.</p>
+    <% } %>
+  </section>
+</main>
+<%- include('partials/foot') %>
