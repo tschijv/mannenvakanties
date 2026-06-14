@@ -68,6 +68,7 @@ function show(i) {
   scale = 1; tx = 0; ty = 0;
   curRot = it.rot || 0;
   baseFit = 1;
+  lbImg.classList.toggle('exif-fixed', !!it.oriented);
   lbImg.onload = function () { computeFit(); applyTransform(); };
   lbImg.src = it.src;
   lbImg.alt = it.cap || 'Foto';
@@ -97,7 +98,7 @@ function next() { show(idx + 1); }
 function prev() { show(idx - 1); }
 
 const mounts = [...document.querySelectorAll('.mount.has-photo')];
-items = mounts.map((el) => ({ src: el.dataset.src, cap: el.dataset.cap || '', id: el.dataset.id || '', rot: parseInt(el.dataset.rot || '0', 10) || 0 }));
+items = mounts.map((el) => ({ src: el.dataset.src, cap: el.dataset.cap || '', id: el.dataset.id || '', rot: parseInt(el.dataset.rot || '0', 10) || 0, oriented: el.dataset.oriented === '1' }));
 mounts.forEach((el, i) => {
   el.addEventListener('click', () => openLightbox(i));
   const img = el.querySelector('img');

@@ -19,12 +19,12 @@
       <% if (year.photos.length) { %>
         <% year.photos.forEach(function(p){ var rot = p.rotation || 0; var cs = (rot % 180 === 0) ? 1 : ((rot % 90 === 0) ? 1.34 : 1.66); %>
           <button class="mount has-photo" type="button"
-                  data-src="<%= p.src %>" data-cap="<%= p.caption %>" data-id="<%= p.id %>" data-rot="<%= rot %>"
+                  data-src="<%= p.src %>" data-cap="<%= p.caption %>" data-id="<%= p.id %>" data-rot="<%= rot %>" data-oriented="<%= p.oriented ? 1 : 0 %>"
                   aria-label="Vergroot foto<%= p.caption ? ': ' + p.caption : '' %>">
             <div class="frame">
               <span class="corner tl"></span><span class="corner tr"></span>
               <span class="corner bl"></span><span class="corner br"></span>
-              <img loading="lazy" decoding="async" src="<%= p.src %>" alt="<%= p.caption || 'Foto' %>" style="transform:rotate(<%= rot %>deg) scale(<%= cs %>);">
+              <img loading="lazy" decoding="async" src="<%= p.src %>" alt="<%= p.caption || 'Foto' %>" class="<%= p.oriented ? 'exif-fixed' : '' %>" style="transform:rotate(<%= rot %>deg) scale(<%= cs %>);">
             </div>
             <div class="caption"><%= p.caption || '· · ·' %></div>
           </button>

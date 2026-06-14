@@ -388,3 +388,7 @@ a{color:var(--pen);}
 .bulkbar .btn.ghost:hover{background:rgba(255,255,255,.12);}
 .bulkbar .btn.ghost.danger{border-color:rgba(255,170,150,.7);color:#ffd9d0;}
 .bulkbar #bulkClear{color:#e9dcc6;}
+
+/* EXIF-stand: voor foto's waarvan we de oriëntatie al hebben verwerkt, laten we de browser
+   niet nóg eens draaien — wij bepalen de stand via de rotatie. */
+.exif-fixed{image-orientation:none;}

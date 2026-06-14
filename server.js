@@ -160,6 +160,46 @@ function photoKey(p) {
   return 'src:' + (p.src || ('id:' + p.id));
 }
 
+// EXIF-oriëntatie (1-8) van een JPEG uitlezen. Geen EXIF / ander formaat / fout -> 1.
+function exifOrientation(filePath) {
+  let fd;
+  try {
+    fd = fs.openSync(filePath, 'r');
+    const buf = Buffer.alloc(65536);
+    const read = fs.readSync(fd, buf, 0, buf.length, 0);
+    fs.closeSync(fd); fd = undefined;
+    if (read < 4 || buf[0] !== 0xFF || buf[1] !== 0xD8) return 1;
+    let off = 2;
+    while (off + 4 <= read) {
+      if (buf[off] !== 0xFF) { off++; continue; }
+      const marker = buf[off + 1];
+      if (marker === 0xDA || marker === 0xD9) break;
+      const size = buf.readUInt16BE(off + 2);
+      if (marker === 0xE1 && buf.toString('ascii', off + 4, off + 8) === 'Exif') {
+        const tiff = off + 10;
+        const le = buf.toString('ascii', tiff, tiff + 2) === 'II';
+        const r16 = (o) => le ? buf.readUInt16LE(o) : buf.readUInt16BE(o);
+        const r32 = (o) => le ? buf.readUInt32LE(o) : buf.readUInt32BE(o);
+        const ifd0 = tiff + r32(tiff + 4);
+        if (ifd0 + 2 > read) return 1;
+        const n = r16(ifd0);
+        for (let i = 0; i < n; i++) {
+          const e = ifd0 + 2 + i * 12;
+          if (e + 12 > read) break;
+          if (r16(e) === 0x0112) return r16(e + 8) || 1;
+        }
+        return 1;
+      }
+      off += 2 + size;
+    }
+    return 1;
+  } catch (x) { try { if (fd !== undefined) fs.closeSync(fd); } catch (y) {} return 1; }
+}
+// EXIF-oriëntatie -> graden die wij draaien om de foto rechtop te tonen.
+function orientationToRotation(o) {
+  return ({ 3: 180, 4: 180, 5: 90, 6: 90, 7: 270, 8: 270 })[o] || 0;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Publieke ingangen: tijdlijn, kaart, en losse jaar-pagina's         */
 /* ------------------------------------------------------------------ */
@@ -175,7 +215,7 @@ app.get('/kaart', (req, res) => {
 /* Groepsfoto's: de per jaar aangewezen foto, op jaar gesorteerd */
 function groupPhotos() {
   return db.prepare(
-    'SELECT y.id AS year_id, y.year, y.place, p.id AS photo_id, p.src, p.caption, p.rotation ' +
+    'SELECT y.id AS year_id, y.year, y.place, p.id AS photo_id, p.src, p.caption, p.rotation, p.oriented ' +
     'FROM years y JOIN photos p ON p.id = y.group_photo_id ' +
     'WHERE p.deleted = 0 ORDER BY y.year ASC, y.id ASC'
   ).all();
@@ -403,9 +443,12 @@ app.post('/beheer/jaar/:id/fotos', requireLogin, (req, res) => {
     if (!files.length) { req.session.flash = { type: 'err', msg: 'Geen geldige afbeeldingen gekozen (alleen jpg, png, gif, webp; max 15 MB per stuk).' }; return res.redirect(back); }
 
     const startSort = (db.prepare('SELECT COALESCE(MAX(sort), -1) AS m FROM photos WHERE year_id = ?').get(y.id).m) + 1;
-    const ins = db.prepare('INSERT INTO photos (year_id, src, caption, uploaded_by, sort) VALUES (?, ?, ?, ?, ?)');
+    const ins = db.prepare('INSERT INTO photos (year_id, src, caption, uploaded_by, sort, rotation, base_rotation, oriented) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
     const tx = db.transaction(() => {
-      files.forEach((f, i) => ins.run(y.id, '/uploads/' + y.id + '/' + f.filename, '', req.session.userId, startSort + i));
+      files.forEach((f, i) => {
+        const rot = orientationToRotation(exifOrientation(f.path));
+        ins.run(y.id, '/uploads/' + y.id + '/' + f.filename, '', req.session.userId, startSort + i, rot, rot, 1);
+      });
     });
     tx();
     addLog(actor(res), files.length + ' foto(\'s) toegevoegd aan ' + y.year);
@@ -449,7 +492,7 @@ app.post('/beheer/foto/:id/draai', requireLogin, (req, res) => {
   if (!p) return res.redirect('/beheer');
   if (!canEdit(res.locals.user, p.uploaded_by)) { req.session.flash = { type: 'err', msg: 'Je mag alleen je eigen foto\'s draaien.' }; return res.redirect('/beheer/jaar/' + p.year_id); }
   let rot;
-  if (req.body.richting === 'recht') rot = 0;
+  if (req.body.richting === 'recht') rot = p.base_rotation || 0;
   else { const delta = req.body.richting === 'links' ? -90 : 90; rot = ((((p.rotation || 0) + delta) % 360) + 360) % 360; }
   db.prepare('UPDATE photos SET rotation = ? WHERE id = ?').run(rot, p.id);
   res.redirect('/beheer/jaar/' + p.year_id + '#foto-' + p.id);

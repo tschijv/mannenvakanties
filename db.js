@@ -70,6 +70,8 @@ ensureColumn('years', 'group_photo_id', 'INTEGER');
 
 /* Rotatiehoek per foto (graden, stappen van 45) — niet-destructief */
 ensureColumn('photos', 'rotation', 'INTEGER NOT NULL DEFAULT 0');
+ensureColumn('photos', 'oriented', 'INTEGER NOT NULL DEFAULT 0');       // 1 = EXIF-stand al verwerkt bij upload
+ensureColumn('photos', 'base_rotation', 'INTEGER NOT NULL DEFAULT 0');  // de "rechte" stand (uit EXIF) voor de Rechtzetten-knop
 /* Oude 45°-waarden (uit een eerdere versie) rechtzetten; draaien gaat nu per 90°. */
 db.exec('UPDATE photos SET rotation = 0 WHERE rotation % 90 <> 0');
 

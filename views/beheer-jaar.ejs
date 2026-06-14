@@ -43,7 +43,7 @@
             <% var rot = p.rotation || 0; %>
             <% if (pmine) { %><label class="thumb-check"><input type="checkbox" class="selbox" value="<%= p.id %>" aria-label="Selecteer foto"></label><% } %>
             <div class="thumb-pic">
-              <img loading="lazy" src="<%= p.src %>" alt="<%= p.caption || 'Foto' %>" style="transform:rotate(<%= rot %>deg);">
+              <img loading="lazy" src="<%= p.src %>" alt="<%= p.caption || 'Foto' %>" class="<%= p.oriented ? 'exif-fixed' : '' %>" style="transform:rotate(<%= rot %>deg);">
             </div>
             <% if (pmine) { %>
               <div class="rot-row">
@@ -55,7 +55,7 @@
                   <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="richting" value="rechts">
                   <button class="linkbtn rotbtn" type="submit" title="90° rechtsom draaien">&#8635; Rechts</button>
                 </form>
-                <% if (rot) { %>
+                <% if (rot !== (p.base_rotation || 0)) { %>
                   <form method="post" action="/beheer/foto/<%= p.id %>/draai" class="inline">
                     <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="richting" value="recht">
                     <button class="linkbtn rotbtn undo" type="submit" title="Terug naar de oorspronkelijke stand">&#8617; Rechtzetten</button>
