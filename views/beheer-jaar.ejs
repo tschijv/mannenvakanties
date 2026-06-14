@@ -62,9 +62,13 @@
           <label class="field wide"><span>Notitie</span><input type="text" name="note" value="<%= year.note %>"></label>
           <label class="field"><span>Breedtegraad <em>(lat)</em></span><input type="text" name="lat" value="<%= year.lat != null ? year.lat : '' %>" placeholder="bv. 50.41"></label>
           <label class="field"><span>Lengtegraad <em>(lng)</em></span><input type="text" name="lng" value="<%= year.lng != null ? year.lng : '' %>" placeholder="bv. 6.11"></label>
+          <div class="geocode-row">
+            <button type="button" class="btn ghost" data-geocode>Zoek coördinaten bij plaats</button>
+            <span class="muted" data-geocode-status></span>
+          </div>
           <button class="btn" type="submit">Opslaan</button>
         </form>
-        <p class="muted coord-hint">Coördinaten bepalen waar dit jaar op de kaart komt. Tip: rechtsklik op de plek in Google Maps en klik op de getallen om ze te kopiëren. Laat ze leeg om dit jaar van de kaart te laten.</p>
+        <p class="muted coord-hint">Vul hierboven de plaats in en klik op "Zoek coördinaten bij plaats" — dan worden de twee getallen vanzelf ingevuld. Klik daarna op Opslaan. (Je kunt ze ook met de hand invullen, of leeg laten om dit jaar van de kaart te houden.)</p>
         <% if (user.role === 'admin') { %>
           <form method="post" action="/beheer/jaar/<%= year.id %>/verwijderen" onsubmit="return confirm('Het hele jaar \'<%= year.year %>\' en alle foto\'s erin definitief verwijderen?');" class="del-year">
             <input type="hidden" name="_csrf" value="<%= csrf %>">
@@ -75,4 +79,5 @@
     <% } %>
   </section>
 </main>
+<script src="/beheer.js"></script>
 <%- include('partials/foot') %>

@@ -22,6 +22,10 @@
       <label class="field wide"><span>Korte notitie <em>(optioneel)</em></span><input type="text" name="note" placeholder="Een zin over dit jaar"></label>
       <label class="field"><span>Lat <em>(optioneel)</em></span><input type="text" name="lat" placeholder="bv. 50.41"></label>
       <label class="field"><span>Lng <em>(optioneel)</em></span><input type="text" name="lng" placeholder="bv. 6.11"></label>
+      <div class="geocode-row">
+        <button type="button" class="btn ghost" data-geocode>Zoek coördinaten bij plaats</button>
+        <span class="muted" data-geocode-status></span>
+      </div>
       <button class="btn" type="submit">Jaar aanmaken</button>
     </form>
   </section>
@@ -47,4 +51,5 @@
 
   <p class="beheer-foot"><a href="/">&larr; Terug naar het album</a></p>
 </main>
+<script src="/beheer.js"></script>
 <%- include('partials/foot') %>

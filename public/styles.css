@@ -305,3 +305,9 @@ a{color:var(--pen);}
 .linkbtn.grp{font-size:12px;}
 .linkbtn.grp.on{color:var(--stamp);font-weight:700;}
 .thumb.is-group{outline:2px solid var(--stamp);outline-offset:3px;border-radius:4px;}
+
+/* ===== Coördinaten-zoekknop ===== */
+.geocode-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;width:100%;margin:2px 0 4px;}
+.btn.ghost{background:transparent;border:1px solid var(--paper-edge,#d8cdbb);color:var(--ink,#5b4636);box-shadow:none;font-size:14px;}
+.btn.ghost:hover{background:rgba(40,28,18,.05);}
+[data-geocode-status]{font-size:13px;line-height:1.4;}

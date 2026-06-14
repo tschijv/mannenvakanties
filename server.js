@@ -243,6 +243,23 @@ app.get('/beheer/jaar/:id', requireLogin, (req, res) => {
   res.render('beheer-jaar', { year });
 });
 
+/* Coördinaten opzoeken bij een plaatsnaam (OpenStreetMap Nominatim) */
+app.get('/beheer/geocode', requireLogin, async (req, res) => {
+  const q = String(req.query.q || '').trim();
+  if (!q) return res.json({ error: 'Vul eerst een plaats in.' });
+  try {
+    const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=' + encodeURIComponent(q);
+    const r = await fetch(url, { headers: { 'User-Agent': 'Mannenvakanties-fotoalbum/1.0' } });
+    if (!r.ok) return res.json({ error: 'De zoekdienst gaf een fout (' + r.status + '). Probeer het zo nog eens.' });
+    const data = await r.json();
+    if (!Array.isArray(data) || !data.length) return res.json({ error: 'Geen plaats gevonden. Probeer een vollediger naam, bijv. "Waimes, België".' });
+    const hit = data[0];
+    res.json({ lat: parseFloat(hit.lat), lng: parseFloat(hit.lon), name: hit.display_name });
+  } catch (e) {
+    res.json({ error: 'Kon de zoekdienst niet bereiken. Probeer het later nog eens of vul de coördinaten handmatig in.' });
+  }
+});
+
 /* jaar aanmaken */
 app.post('/beheer/jaar', requireLogin, (req, res) => {
   if (!checkCsrf(req, res)) return;
