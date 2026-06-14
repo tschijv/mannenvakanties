@@ -117,7 +117,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   storage,
-  limits: { fileSize: 15 * 1024 * 1024, files: 40 },
+  limits: { fileSize: 15 * 1024 * 1024, files: 200 },
   fileFilter: (req, file, cb) => cb(null, /^image\/(jpeg|png|gif|webp|heic|heif)$/.test(file.mimetype))
 });
 
@@ -136,6 +136,26 @@ function yearsOverview() {
 function num(v) {
   const n = parseFloat(String(v == null ? '' : v).replace(',', '.').trim());
   return Number.isFinite(n) ? n : null;
+}
+
+// Haal het 11-teken YouTube-id uit allerlei linkvormen (watch?v=, youtu.be/, embed/, shorts/, of kaal id).
+function youtubeId(url) {
+  const s = String(url == null ? '' : url).trim();
+  if (/^[A-Za-z0-9_-]{11}$/.test(s)) return s;
+  let m = s.match(/[?&]v=([A-Za-z0-9_-]{11})/); if (m) return m[1];
+  m = s.match(/(?:youtu\.be\/|\/embed\/|\/shorts\/|\/live\/|\/v\/)([A-Za-z0-9_-]{11})/); if (m) return m[1];
+  return null;
+}
+
+// Sleutel om dubbele foto's te herkennen: inhoud-hash voor lokale uploads, anders de bron-URL.
+function photoKey(p) {
+  if (p.src && p.src.startsWith('/uploads/')) {
+    try {
+      const fp = path.join(__dirname, 'data', p.src.replace('/uploads/', 'uploads/'));
+      return 'h:' + crypto.createHash('sha256').update(fs.readFileSync(fp)).digest('hex');
+    } catch (e) { return 'src:' + p.src; }
+  }
+  return 'src:' + (p.src || ('id:' + p.id));
 }
 
 /* ------------------------------------------------------------------ */
@@ -173,6 +193,7 @@ app.get('/jaar/:id', (req, res) => {
   const year = db.prepare('SELECT * FROM years WHERE id = ?').get(req.params.id);
   if (!year) return res.redirect('/');
   year.photos = db.prepare('SELECT * FROM photos WHERE year_id = ? AND deleted = 0 ORDER BY sort ASC, id ASC').all(year.id);
+  year.videos = db.prepare('SELECT * FROM videos WHERE year_id = ? ORDER BY sort ASC, id ASC').all(year.id);
   res.render('jaar', { year });
 });
 
@@ -259,6 +280,7 @@ app.get('/beheer/jaar/:id', requireLogin, (req, res) => {
   const year = db.prepare('SELECT * FROM years WHERE id = ?').get(req.params.id);
   if (!year) { req.session.flash = { type: 'err', msg: 'Jaar niet gevonden.' }; return res.redirect('/beheer'); }
   year.photos = db.prepare('SELECT * FROM photos WHERE year_id = ? AND deleted = 0 ORDER BY sort ASC, id ASC').all(year.id);
+  year.videos = db.prepare('SELECT * FROM videos WHERE year_id = ? ORDER BY sort ASC, id ASC').all(year.id);
   res.render('beheer-jaar', { year });
 });
 
@@ -311,6 +333,7 @@ app.post('/beheer/jaar/:id/verwijderen', requireLogin, requireAdmin, (req, res) 
   if (!checkCsrf(req, res)) return;
   const y = db.prepare('SELECT * FROM years WHERE id = ?').get(req.params.id);
   if (!y) return res.redirect('/beheer');
+  db.prepare('DELETE FROM videos WHERE year_id = ?').run(y.id);
   db.prepare('DELETE FROM years WHERE id = ?').run(y.id); // photos cascade
   fs.rmSync(path.join(UPLOAD_DIR, String(y.id)), { recursive: true, force: true });
   addLog(actor(res), 'jaar "' + y.year + '" verwijderd');
@@ -320,7 +343,7 @@ app.post('/beheer/jaar/:id/verwijderen', requireLogin, requireAdmin, (req, res) 
 
 /* foto's uploaden naar een jaar (elk lid) */
 app.post('/beheer/jaar/:id/fotos', requireLogin, (req, res) => {
-  upload.array('fotos', 40)(req, res, (err) => {
+  upload.array('fotos', 200)(req, res, (err) => {
     if (!checkCsrf(req, res)) return;
     const y = db.prepare('SELECT * FROM years WHERE id = ?').get(req.params.id);
     if (!y) return res.redirect('/beheer');
@@ -364,6 +387,31 @@ app.post('/beheer/foto/:id/verwijderen', requireLogin, (req, res) => {
   res.redirect('/beheer/jaar/' + p.year_id);
 });
 
+/* Dubbele foto's opruimen binnen een jaar (alleen admin) — zacht verwijderd, dus herstelbaar */
+app.post('/beheer/jaar/:id/ontdubbel', requireLogin, requireAdmin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const y = db.prepare('SELECT * FROM years WHERE id = ?').get(req.params.id);
+  if (!y) return res.redirect('/beheer');
+  const back = '/beheer/jaar/' + y.id;
+  const photos = db.prepare('SELECT * FROM photos WHERE year_id = ? AND deleted = 0 ORDER BY sort ASC, id ASC').all(y.id);
+  const seen = new Set();
+  const dupes = [];
+  for (const p of photos) {
+    const key = photoKey(p);
+    if (seen.has(key)) dupes.push(p.id); else seen.add(key);
+  }
+  if (dupes.length) {
+    const stmt = db.prepare("UPDATE photos SET deleted = 1, deleted_at = datetime('now'), deleted_by = ? WHERE id = ?");
+    const tx = db.transaction(() => { for (const id of dupes) stmt.run(req.session.userId, id); });
+    tx();
+    addLog(actor(res), dupes.length + ' dubbele foto(\'s) opgeruimd in ' + y.year, 'content');
+    req.session.flash = { type: 'ok', msg: dupes.length + ' dubbele foto(\'s) naar de prullenbak verplaatst. Van elke blijft er één staan.' };
+  } else {
+    req.session.flash = { type: 'ok', msg: 'Geen dubbele foto\'s gevonden in dit jaar.' };
+  }
+  res.redirect(back);
+});
+
 /* foto aanwijzen (of weghalen) als groepsfoto van het jaar (elk lid) */
 app.post('/beheer/foto/:id/groepsfoto', requireLogin, (req, res) => {
   if (!checkCsrf(req, res)) return;
@@ -375,6 +423,34 @@ app.post('/beheer/foto/:id/groepsfoto', requireLogin, (req, res) => {
   addLog(actor(res), (newVal ? 'groepsfoto ingesteld voor ' : 'groepsfoto verwijderd voor ') + yearLabel(p.year_id));
   req.session.flash = { type: 'ok', msg: newVal ? 'Groepsfoto ingesteld voor dit jaar.' : 'Groepsfoto verwijderd.' };
   res.redirect('/beheer/jaar/' + p.year_id);
+});
+
+/* YouTube-video toevoegen aan een jaar (elk lid) */
+app.post('/beheer/jaar/:id/video', requireLogin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const y = db.prepare('SELECT * FROM years WHERE id = ?').get(req.params.id);
+  if (!y) return res.redirect('/beheer');
+  const back = '/beheer/jaar/' + y.id;
+  const vid = youtubeId(req.body.url);
+  if (!vid) { req.session.flash = { type: 'err', msg: 'Dat lijkt geen geldige YouTube-link. Plak de link uit de adresbalk of via de "Delen"-knop (youtube.com/watch?v=… of youtu.be/…).' }; return res.redirect(back); }
+  const title = String(req.body.title || '').trim().slice(0, 160);
+  const sort = (db.prepare('SELECT COALESCE(MAX(sort), -1) AS m FROM videos WHERE year_id = ?').get(y.id).m) + 1;
+  db.prepare('INSERT INTO videos (year_id, youtube_id, title, added_by, sort) VALUES (?, ?, ?, ?, ?)').run(y.id, vid, title, req.session.userId, sort);
+  addLog(actor(res), 'video toegevoegd aan ' + y.year, 'content');
+  req.session.flash = { type: 'ok', msg: 'Video toegevoegd.' };
+  res.redirect(back);
+});
+
+/* Video verwijderen (toevoeger/admin) */
+app.post('/beheer/video/:id/verwijderen', requireLogin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const v = db.prepare('SELECT * FROM videos WHERE id = ?').get(req.params.id);
+  if (!v) return res.redirect('/beheer');
+  if (!canEdit(res.locals.user, v.added_by)) { req.session.flash = { type: 'err', msg: 'Je mag alleen je eigen video\'s verwijderen.' }; return res.redirect('/beheer/jaar/' + v.year_id); }
+  db.prepare('DELETE FROM videos WHERE id = ?').run(v.id);
+  addLog(actor(res), 'video verwijderd uit ' + yearLabel(v.year_id), 'content');
+  req.session.flash = { type: 'ok', msg: 'Video verwijderd.' };
+  res.redirect('/beheer/jaar/' + v.year_id);
 });
 
 /* ----- Prullenbak (alleen admin): herstellen of definitief verwijderen ----- */
@@ -448,6 +524,7 @@ app.post('/beheer/leden/:id/verwijderen', requireLogin, requireAdmin, (req, res)
     db.prepare('UPDATE years  SET created_by  = NULL WHERE created_by  = ?').run(target.id);
     db.prepare('UPDATE photos SET uploaded_by = NULL WHERE uploaded_by = ?').run(target.id);
     db.prepare('UPDATE photos SET deleted_by  = NULL WHERE deleted_by  = ?').run(target.id);
+    db.prepare('UPDATE videos SET added_by    = NULL WHERE added_by    = ?').run(target.id);
     db.prepare('DELETE FROM users WHERE id = ?').run(target.id);
   });
   tx();

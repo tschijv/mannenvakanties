@@ -34,6 +34,22 @@
     </div>
   </section>
 
+  <% if (year.videos && year.videos.length) { %>
+    <section class="year videos paper-grain">
+      <h2 class="videos-head">Video's</h2>
+      <div class="video-grid">
+        <% year.videos.forEach(function(v){ %>
+          <figure class="video-tile">
+            <div class="video-embed">
+              <iframe src="https://www.youtube-nocookie.com/embed/<%= v.youtube_id %>" title="<%= v.title || ('Video ' + year.year) %>" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            </div>
+            <% if (v.title) { %><figcaption class="video-cap"><%= v.title %></figcaption><% } %>
+          </figure>
+        <% }) %>
+      </div>
+    </section>
+  <% } %>
+
   <p class="year-back"><a href="/">&larr; Terug naar de tijdlijn</a> &middot; <a href="/kaart">naar de kaart</a></p>
 </main>
 

@@ -15,8 +15,11 @@
     <!-- Foto's uploaden -->
     <form method="post" action="/beheer/jaar/<%= year.id %>/fotos" enctype="multipart/form-data" class="form upload-form">
       <input type="hidden" name="_csrf" value="<%= csrf %>">
-      <label class="field grow"><span>Foto's kiezen <em>(meerdere mag; jpg, png, gif, webp &mdash; max 15 MB per stuk)</em></span>
-        <input type="file" name="fotos" accept="image/*" multiple required>
+      <label class="field grow"><span>Losse foto's kiezen <em>(meerdere mag; jpg, png, gif, webp &mdash; max 15 MB per stuk)</em></span>
+        <input type="file" name="fotos" accept="image/*" multiple>
+      </label>
+      <label class="field grow"><span>&hellip;of een hele map kiezen <em>(alle foto's erin worden geüpload, max 200 per keer)</em></span>
+        <input type="file" name="fotos" accept="image/*" multiple webkitdirectory>
       </label>
       <button class="btn" type="submit">Uploaden</button>
     </form>
@@ -50,6 +53,41 @@
     <% } else { %>
       <p class="muted">Nog geen foto's in dit jaar.</p>
     <% } %>
+
+    <% if (user.role === 'admin' && year.photos.length > 1) { %>
+      <form method="post" action="/beheer/jaar/<%= year.id %>/ontdubbel" class="ontdubbel-form" onsubmit="return confirm('Dubbele foto\'s opsporen en naar de prullenbak verplaatsen? Van elke dubbele blijft er één staan; je kunt ze altijd herstellen.');">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <button class="btn ghost" type="submit">Dubbele foto's opruimen</button>
+        <span class="muted">Vergelijkt de inhoud van de foto's; identieke exemplaren gaan naar de prullenbak.</span>
+      </form>
+    <% } %>
+
+    <!-- Video's (YouTube) -->
+    <div class="beheer-videos">
+      <h3>Video's (YouTube)</h3>
+      <form method="post" action="/beheer/jaar/<%= year.id %>/video" class="form row">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <label class="field grow"><span>YouTube-link</span><input type="url" name="url" placeholder="https://www.youtube.com/watch?v=… of https://youtu.be/…" required></label>
+        <label class="field grow"><span>Titel <em>(optioneel)</em></span><input type="text" name="title" placeholder="bv. Aankomst in Waimes"></label>
+        <button class="btn" type="submit">Video toevoegen</button>
+      </form>
+      <% if (year.videos && year.videos.length) { %>
+        <ul class="video-list">
+          <% year.videos.forEach(function(v){ %>
+            <li class="video-row">
+              <img class="video-thumb" src="https://i.ytimg.com/vi/<%= v.youtube_id %>/mqdefault.jpg" alt="" loading="lazy">
+              <span class="video-row-title"><%= v.title || ('youtu.be/' + v.youtube_id) %></span>
+              <form method="post" action="/beheer/video/<%= v.id %>/verwijderen" class="inline" onsubmit="return confirm('Deze video verwijderen?');">
+                <input type="hidden" name="_csrf" value="<%= csrf %>">
+                <button class="linkbtn danger" type="submit">Verwijderen</button>
+              </form>
+            </li>
+          <% }) %>
+        </ul>
+      <% } else { %>
+        <p class="muted">Nog geen video's bij dit jaar.</p>
+      <% } %>
+    </div>
 
     <!-- Jaar bewerken / verwijderen -->
     <% if (mine) { %>
