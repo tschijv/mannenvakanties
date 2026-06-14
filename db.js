@@ -70,6 +70,8 @@ ensureColumn('years', 'group_photo_id', 'INTEGER');
 
 /* Rotatiehoek per foto (graden, stappen van 45) — niet-destructief */
 ensureColumn('photos', 'rotation', 'INTEGER NOT NULL DEFAULT 0');
+/* Oude 45°-waarden (uit een eerdere versie) rechtzetten; draaien gaat nu per 90°. */
+db.exec('UPDATE photos SET rotation = 0 WHERE rotation % 90 <> 0');
 
 /* Logboek: wie deed wat, wanneer (alleen voor beheerders in te zien) */
 db.exec(`

@@ -29,9 +29,9 @@
       <div class="thumbs">
         <% year.photos.forEach(function(p){ var pmine = (user.role === 'admin' || user.id === p.uploaded_by); var isGroup = (year.group_photo_id === p.id); %>
           <div id="foto-<%= p.id %>" class="thumb<%= isGroup ? ' is-group' : '' %>">
-            <% var rot = p.rotation || 0; var cs = (rot % 180 === 0) ? 1 : ((rot % 90 === 0) ? 1.34 : 1.66); %>
+            <% var rot = p.rotation || 0; %>
             <div class="thumb-pic">
-              <img loading="lazy" src="<%= p.src %>" alt="<%= p.caption || 'Foto' %>" style="transform:rotate(<%= rot %>deg) scale(<%= cs %>);">
+              <img loading="lazy" src="<%= p.src %>" alt="<%= p.caption || 'Foto' %>" style="transform:rotate(<%= rot %>deg);">
             </div>
             <% if (pmine) { %>
               <div class="rot-row">

@@ -13,6 +13,7 @@ const archiver = require('archiver');
 const { db, UPLOAD_DIR } = require('./db');
 
 const app = express();
+app.locals.ASSET_VER = String(Date.now()); // verandert bij elke (her)start, dwingt verse CSS/JS af
 const PORT = process.env.PORT || 3000;
 
 // Vaste beheerders: namen uit ADMIN_USERS (komma-gescheiden) zijn altijd admin.

@@ -57,5 +57,5 @@
   <% if (user) { %><a class="lb-download" id="lbDownload" href="#" download>Download foto</a><% } %>
 </div>
 
-<script src="/gallery.js"></script>
+<script src="/gallery.js?v=<%= typeof ASSET_VER !== 'undefined' ? ASSET_VER : '1' %>"></script>
 <%- include('partials/foot') %>
