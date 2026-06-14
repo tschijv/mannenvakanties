@@ -26,10 +26,22 @@
 
     <!-- Foto's met bijschrift -->
     <% if (year.photos.length) { %>
-      <div class="thumbs">
+      <form method="post" action="/beheer/jaar/<%= year.id %>/bulk" id="bulkbar" class="bulkbar" hidden>
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <input type="hidden" name="ids" id="bulkIds">
+        <input type="hidden" name="action" id="bulkAction">
+        <span class="bulk-count"><span id="bulkN">0</span> geselecteerd</span>
+        <button type="button" class="btn ghost" data-bulk="links" title="90° linksom">&#8634; Links</button>
+        <button type="button" class="btn ghost" data-bulk="rechts" title="90° rechtsom">&#8635; Rechts</button>
+        <button type="button" class="btn ghost danger" data-bulk="verwijderen">Verwijderen</button>
+        <button type="button" class="linkbtn" id="bulkClear">Wis selectie</button>
+      </form>
+      <p class="thumbs-hint muted">Sleep foto's om de volgorde te wijzigen. Vink foto's aan (hoekje linksboven) voor een bulkactie.</p>
+      <div class="thumbs" data-order-url="/beheer/jaar/<%= year.id %>/volgorde" data-csrf="<%= csrf %>">
         <% year.photos.forEach(function(p){ var pmine = (user.role === 'admin' || user.id === p.uploaded_by); var isGroup = (year.group_photo_id === p.id); %>
           <div id="foto-<%= p.id %>" class="thumb<%= isGroup ? ' is-group' : '' %>">
             <% var rot = p.rotation || 0; %>
+            <% if (pmine) { %><label class="thumb-check"><input type="checkbox" class="selbox" value="<%= p.id %>" aria-label="Selecteer foto"></label><% } %>
             <div class="thumb-pic">
               <img loading="lazy" src="<%= p.src %>" alt="<%= p.caption || 'Foto' %>" style="transform:rotate(<%= rot %>deg);">
             </div>

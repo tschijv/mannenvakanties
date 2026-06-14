@@ -373,3 +373,18 @@ a{color:var(--pen);}
 .lb-zoom-btn:hover:not(:disabled){background:rgba(0,0,0,.68);}
 .lb-zoom-btn:disabled{opacity:.4;cursor:default;}
 @media (max-width:560px){.lb-zoom{bottom:14px;right:10px;}.lb-zoom-btn{width:40px;height:40px;font-size:22px;}}
+
+/* ===== Beheer: bulkselectie, slepen, in-place bewerken ===== */
+.thumb{position:relative;}
+.thumb.dragging{opacity:.45;outline:2px dashed var(--stamp,#9b2d2d);outline-offset:2px;}
+.thumb-pic{cursor:grab;}
+.thumb-check{position:absolute;top:7px;left:7px;z-index:3;background:rgba(255,253,246,.92);border:1px solid var(--paper-edge,#d8cdbb);border-radius:5px;padding:3px 4px;line-height:0;cursor:pointer;}
+.thumb-check input{width:18px;height:18px;cursor:pointer;margin:0;vertical-align:middle;}
+.cap-status{font-size:12px;color:#3a7d44;margin-left:6px;white-space:nowrap;}
+.thumbs-hint{font-size:12.5px;margin:0 0 10px;}
+.bulkbar{position:sticky;top:8px;z-index:20;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--ink,#2c2017);color:#fff;border-radius:10px;padding:9px 14px;margin:0 0 12px;box-shadow:0 4px 16px rgba(40,28,18,.25);}
+.bulkbar .bulk-count{font-family:var(--meta);font-size:13px;opacity:.95;}
+.bulkbar .btn.ghost{border-color:rgba(255,255,255,.45);color:#fff;}
+.bulkbar .btn.ghost:hover{background:rgba(255,255,255,.12);}
+.bulkbar .btn.ghost.danger{border-color:rgba(255,170,150,.7);color:#ffd9d0;}
+.bulkbar #bulkClear{color:#e9dcc6;}

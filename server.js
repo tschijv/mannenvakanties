@@ -414,13 +414,18 @@ app.post('/beheer/jaar/:id/fotos', requireLogin, (req, res) => {
   });
 });
 
-/* bijschrift van een foto bijwerken (uploader/admin) */
+/* bijschrift van een foto bijwerken (uploader/admin) — ondersteunt opslaan zonder herladen */
 app.post('/beheer/foto/:id', requireLogin, (req, res) => {
   if (!checkCsrf(req, res)) return;
+  const ajax = req.get('X-Requested-With') === 'fetch';
   const p = db.prepare('SELECT * FROM photos WHERE id = ?').get(req.params.id);
-  if (!p) return res.redirect('/beheer');
-  if (!canEdit(res.locals.user, p.uploaded_by)) { req.session.flash = { type: 'err', msg: 'Je mag alleen je eigen foto\'s bewerken.' }; return res.redirect('/beheer/jaar/' + p.year_id); }
+  if (!p) return ajax ? res.status(404).json({ error: 'niet gevonden' }) : res.redirect('/beheer');
+  if (!canEdit(res.locals.user, p.uploaded_by)) {
+    if (ajax) return res.status(403).json({ error: 'geen rechten' });
+    req.session.flash = { type: 'err', msg: 'Je mag alleen je eigen foto\'s bewerken.' }; return res.redirect('/beheer/jaar/' + p.year_id);
+  }
   db.prepare('UPDATE photos SET caption = ? WHERE id = ?').run(String(req.body.caption || '').trim(), p.id);
+  if (ajax) return res.json({ ok: true });
   req.session.flash = { type: 'ok', msg: 'Bijschrift opgeslagen.' };
   res.redirect('/beheer/jaar/' + p.year_id);
 });
@@ -448,6 +453,49 @@ app.post('/beheer/foto/:id/draai', requireLogin, (req, res) => {
   else { const delta = req.body.richting === 'links' ? -90 : 90; rot = ((((p.rotation || 0) + delta) % 360) + 360) % 360; }
   db.prepare('UPDATE photos SET rotation = ? WHERE id = ?').run(rot, p.id);
   res.redirect('/beheer/jaar/' + p.year_id + '#foto-' + p.id);
+});
+
+/* Volgorde van foto's binnen een jaar opslaan (slepen) */
+app.post('/beheer/jaar/:id/volgorde', requireLogin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const y = db.prepare('SELECT * FROM years WHERE id = ?').get(req.params.id);
+  if (!y) return res.status(404).json({ error: 'niet gevonden' });
+  const ids = String(req.body.order || '').split(',').map((s) => parseInt(s, 10)).filter(Boolean);
+  const valid = new Set(db.prepare('SELECT id FROM photos WHERE year_id = ? AND deleted = 0').all(y.id).map((r) => r.id));
+  const upd = db.prepare('UPDATE photos SET sort = ? WHERE id = ? AND year_id = ?');
+  const tx = db.transaction(() => { let i = 0; for (const id of ids) { if (valid.has(id)) upd.run(i++, id, y.id); } });
+  tx();
+  res.json({ ok: true });
+});
+
+/* Bulkacties op geselecteerde foto's: draaien of verwijderen */
+app.post('/beheer/jaar/:id/bulk', requireLogin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const y = db.prepare('SELECT * FROM years WHERE id = ?').get(req.params.id);
+  if (!y) return res.redirect('/beheer');
+  const back = '/beheer/jaar/' + y.id;
+  const action = req.body.action;
+  const ids = String(req.body.ids || '').split(',').map((s) => parseInt(s, 10)).filter(Boolean);
+  if (!ids.length || !['links', 'rechts', 'verwijderen'].includes(action)) { req.session.flash = { type: 'info', msg: 'Niets geselecteerd.' }; return res.redirect(back); }
+  let n = 0;
+  const tx = db.transaction(() => {
+    for (const id of ids) {
+      const p = db.prepare('SELECT * FROM photos WHERE id = ? AND year_id = ? AND deleted = 0').get(id, y.id);
+      if (!p || !canEdit(res.locals.user, p.uploaded_by)) continue;
+      if (action === 'verwijderen') {
+        db.prepare("UPDATE photos SET deleted = 1, deleted_at = datetime('now'), deleted_by = ? WHERE id = ?").run(req.session.userId, p.id);
+      } else {
+        const delta = action === 'links' ? -90 : 90;
+        const rot = ((((p.rotation || 0) + delta) % 360) + 360) % 360;
+        db.prepare('UPDATE photos SET rotation = ? WHERE id = ?').run(rot, p.id);
+      }
+      n++;
+    }
+  });
+  tx();
+  if (n) addLog(actor(res), n + (action === 'verwijderen' ? ' foto(\'s) verwijderd uit ' : ' foto(\'s) gedraaid in ') + y.year, 'content');
+  req.session.flash = { type: 'ok', msg: n + ' foto(\'s) ' + (action === 'verwijderen' ? 'verwijderd (herstelbaar in de prullenbak)' : 'gedraaid') + '.' };
+  res.redirect(back);
 });
 
 /* Dubbele foto's opruimen binnen een jaar (alleen admin) — zacht verwijderd, dus herstelbaar */
