@@ -37,12 +37,18 @@
               <div class="rot-row">
                 <form method="post" action="/beheer/foto/<%= p.id %>/draai" class="inline">
                   <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="richting" value="links">
-                  <button class="linkbtn rotbtn" type="submit" title="45° linksom draaien">&#8634; Links</button>
+                  <button class="linkbtn rotbtn" type="submit" title="90° linksom draaien">&#8634; Links</button>
                 </form>
                 <form method="post" action="/beheer/foto/<%= p.id %>/draai" class="inline">
                   <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="richting" value="rechts">
-                  <button class="linkbtn rotbtn" type="submit" title="45° rechtsom draaien">&#8635; Rechts</button>
+                  <button class="linkbtn rotbtn" type="submit" title="90° rechtsom draaien">&#8635; Rechts</button>
                 </form>
+                <% if (rot) { %>
+                  <form method="post" action="/beheer/foto/<%= p.id %>/draai" class="inline">
+                    <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="richting" value="recht">
+                    <button class="linkbtn rotbtn undo" type="submit" title="Terug naar de oorspronkelijke stand">&#8617; Rechtzetten</button>
+                  </form>
+                <% } %>
               </div>
             <% } %>
             <form method="post" action="/beheer/foto/<%= p.id %>/groepsfoto" class="grp-form">

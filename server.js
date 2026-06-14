@@ -436,14 +436,15 @@ app.post('/beheer/foto/:id/verwijderen', requireLogin, (req, res) => {
   res.redirect('/beheer/jaar/' + p.year_id);
 });
 
-/* Foto draaien (45° links of rechts) — toevoeger/admin, niet-destructief */
+/* Foto draaien (90° links of rechts, of rechtzetten) — toevoeger/admin, niet-destructief */
 app.post('/beheer/foto/:id/draai', requireLogin, (req, res) => {
   if (!checkCsrf(req, res)) return;
   const p = db.prepare('SELECT * FROM photos WHERE id = ? AND deleted = 0').get(req.params.id);
   if (!p) return res.redirect('/beheer');
   if (!canEdit(res.locals.user, p.uploaded_by)) { req.session.flash = { type: 'err', msg: 'Je mag alleen je eigen foto\'s draaien.' }; return res.redirect('/beheer/jaar/' + p.year_id); }
-  const delta = req.body.richting === 'links' ? -45 : 45;
-  const rot = ((((p.rotation || 0) + delta) % 360) + 360) % 360;
+  let rot;
+  if (req.body.richting === 'recht') rot = 0;
+  else { const delta = req.body.richting === 'links' ? -90 : 90; rot = ((((p.rotation || 0) + delta) % 360) + 360) % 360; }
   db.prepare('UPDATE photos SET rotation = ? WHERE id = ?').run(rot, p.id);
   res.redirect('/beheer/jaar/' + p.year_id + '#foto-' + p.id);
 });
