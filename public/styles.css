@@ -345,3 +345,17 @@ a{color:var(--pen);}
 /* ===== Ontdubbel-knop ===== */
 .ontdubbel-form{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:14px 0 2px;}
 .ontdubbel-form .muted{font-size:12.5px;}
+
+/* ===== Lightbox: bladeren + downloaden ===== */
+.lb-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.35);color:#fff;border:0;width:54px;height:74px;font-size:42px;line-height:1;cursor:pointer;border-radius:10px;display:flex;align-items:center;justify-content:center;transition:background .15s ease;z-index:2;}
+.lb-nav:hover{background:rgba(0,0,0,.62);}
+.lb-prev{left:18px;}
+.lb-next{right:18px;}
+.lb-download{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);background:var(--stamp,#9b2d2d);color:#fff;text-decoration:none;padding:9px 18px;border-radius:22px;font-family:var(--meta);font-size:14px;letter-spacing:.02em;box-shadow:0 3px 14px rgba(0,0,0,.35);z-index:2;}
+.lb-download:hover{filter:brightness(1.08);}
+.year-tools{margin-top:14px;}
+@media (max-width:560px){
+  .lb-nav{width:44px;height:60px;font-size:32px;}
+  .lb-prev{left:6px;} .lb-next{right:6px;}
+  .lb-download{bottom:14px;}
+}

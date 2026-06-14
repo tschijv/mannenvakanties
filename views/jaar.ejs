@@ -8,6 +8,7 @@
     <% if (year.place) { %><p class="year-hero-place"><%= year.place %></p><% } %>
     <% if (year.note) { %><p class="year-hero-note"><%= year.note %></p><% } %>
     <p class="year-hero-count"><%= year.photos.length %> foto<%= year.photos.length === 1 ? '' : "'s" %></p>
+    <% if (user) { %><p class="year-tools"><a class="btn ghost" href="/download/jaar/<%= year.id %>">Download dit jaar (zip)</a></p><% } %>
   </div>
   <div class="postmark" aria-hidden="true"><small>MANNEN&middot;VAK</small><b><%= year.year %></b><small>&#9733;</small></div>
 </header>
@@ -18,7 +19,7 @@
       <% if (year.photos.length) { %>
         <% year.photos.forEach(function(p){ %>
           <button class="mount has-photo" type="button"
-                  data-src="<%= p.src %>" data-cap="<%= p.caption %>"
+                  data-src="<%= p.src %>" data-cap="<%= p.caption %>" data-id="<%= p.id %>"
                   aria-label="Vergroot foto<%= p.caption ? ': ' + p.caption : '' %>">
             <div class="frame">
               <span class="corner tl"></span><span class="corner tr"></span>
@@ -60,10 +61,13 @@
 
 <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Foto vergroot">
   <button class="close" id="lbClose" aria-label="Sluiten">✕</button>
+  <button class="lb-nav lb-prev" id="lbPrev" aria-label="Vorige foto">&#8249;</button>
+  <button class="lb-nav lb-next" id="lbNext" aria-label="Volgende foto">&#8250;</button>
   <figure>
     <img id="lbImg" src="" alt="">
     <figcaption id="lbCap"></figcaption>
   </figure>
+  <% if (user) { %><a class="lb-download" id="lbDownload" href="#" download>Download foto</a><% } %>
 </div>
 
 <script src="/gallery.js"></script>

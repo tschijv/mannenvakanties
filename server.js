@@ -8,6 +8,7 @@ const session = require('express-session');
 const SqliteStore = require('./sqlite-session-store')(session);
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
+const archiver = require('archiver');
 
 const { db, UPLOAD_DIR } = require('./db');
 
@@ -195,6 +196,54 @@ app.get('/jaar/:id', (req, res) => {
   year.photos = db.prepare('SELECT * FROM photos WHERE year_id = ? AND deleted = 0 ORDER BY sort ASC, id ASC').all(year.id);
   year.videos = db.prepare('SELECT * FROM videos WHERE year_id = ? ORDER BY sort ASC, id ASC').all(year.id);
   res.render('jaar', { year });
+});
+
+function extFromSrc(src) {
+  const m = String(src || '').match(/\.([A-Za-z0-9]{1,5})(?:\?|#|$)/);
+  return m ? m[1].toLowerCase() : 'jpg';
+}
+function safeName(s) { return String(s || '').replace(/[^A-Za-z0-9 ._-]+/g, '').trim(); }
+
+/* Eén foto downloaden (ingelogd) */
+app.get('/download/foto/:id', requireLogin, async (req, res) => {
+  const p = db.prepare('SELECT * FROM photos WHERE id = ? AND deleted = 0').get(req.params.id);
+  if (!p) return res.status(404).send('Niet gevonden');
+  const name = 'Mannenvakanties-' + safeName(yearLabel(p.year_id)) + '-' + p.id + '.' + extFromSrc(p.src);
+  if (p.src.startsWith('/uploads/')) {
+    return res.download(path.join(__dirname, 'data', p.src.replace('/uploads/', 'uploads/')), name);
+  }
+  try {
+    const r = await fetch(p.src);
+    if (!r.ok) return res.status(502).send('Kon de foto niet ophalen.');
+    res.setHeader('Content-Type', r.headers.get('content-type') || 'image/jpeg');
+    res.setHeader('Content-Disposition', 'attachment; filename="' + name + '"');
+    res.send(Buffer.from(await r.arrayBuffer()));
+  } catch (e) { res.status(502).send('Kon de foto niet ophalen.'); }
+});
+
+/* Een heel jaar downloaden als zip (ingelogd) */
+app.get('/download/jaar/:id', requireLogin, async (req, res) => {
+  const y = db.prepare('SELECT * FROM years WHERE id = ?').get(req.params.id);
+  if (!y) return res.status(404).send('Niet gevonden');
+  const photos = db.prepare('SELECT * FROM photos WHERE year_id = ? AND deleted = 0 ORDER BY sort ASC, id ASC').all(y.id);
+  res.setHeader('Content-Type', 'application/zip');
+  res.setHeader('Content-Disposition', 'attachment; filename="Mannenvakanties-' + (safeName(y.year) || y.id) + '.zip"');
+  const archive = archiver('zip', { zlib: { level: 5 } });
+  archive.on('error', () => { try { res.end(); } catch (e) {} });
+  archive.pipe(res);
+  let n = 1;
+  for (const p of photos) {
+    const cap = p.caption ? safeName(p.caption).slice(0, 40) + '-' : '';
+    const name = String(n).padStart(3, '0') + '-' + cap + p.id + '.' + extFromSrc(p.src);
+    if (p.src.startsWith('/uploads/')) {
+      const fp = path.join(__dirname, 'data', p.src.replace('/uploads/', 'uploads/'));
+      if (fs.existsSync(fp)) archive.file(fp, { name });
+    } else {
+      try { const r = await fetch(p.src); if (r.ok) archive.append(Buffer.from(await r.arrayBuffer()), { name }); } catch (e) { /* sla over */ }
+    }
+    n++;
+  }
+  archive.finalize();
 });
 
 /* ------------------------------------------------------------------ */

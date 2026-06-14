@@ -17,7 +17,7 @@
         <% groups.forEach(function(g){ %>
           <figure class="group-tile">
             <button class="mount has-photo" type="button"
-                    data-src="<%= g.src %>" data-cap="Groepsfoto <%= g.year %><%= g.place ? ' · ' + g.place : '' %>"
+                    data-src="<%= g.src %>" data-cap="Groepsfoto <%= g.year %><%= g.place ? ' · ' + g.place : '' %>" data-id="<%= g.photo_id %>"
                     aria-label="Vergroot groepsfoto van <%= g.year %>">
               <div class="frame">
                 <span class="corner tl"></span><span class="corner tr"></span>
@@ -44,10 +44,13 @@
 
 <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Foto vergroot">
   <button class="close" id="lbClose" aria-label="Sluiten">✕</button>
+  <button class="lb-nav lb-prev" id="lbPrev" aria-label="Vorige foto">&#8249;</button>
+  <button class="lb-nav lb-next" id="lbNext" aria-label="Volgende foto">&#8250;</button>
   <figure>
     <img id="lbImg" src="" alt="">
     <figcaption id="lbCap"></figcaption>
   </figure>
+  <% if (user) { %><a class="lb-download" id="lbDownload" href="#" download>Download foto</a><% } %>
 </div>
 
 <script src="/gallery.js"></script>
