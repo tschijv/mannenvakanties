@@ -24,9 +24,13 @@
     <!-- Foto's met bijschrift -->
     <% if (year.photos.length) { %>
       <div class="thumbs">
-        <% year.photos.forEach(function(p){ var pmine = (user.role === 'admin' || user.id === p.uploaded_by); %>
-          <div class="thumb">
+        <% year.photos.forEach(function(p){ var pmine = (user.role === 'admin' || user.id === p.uploaded_by); var isGroup = (year.group_photo_id === p.id); %>
+          <div class="thumb<%= isGroup ? ' is-group' : '' %>">
             <img loading="lazy" src="<%= p.src %>" alt="<%= p.caption || 'Foto' %>">
+            <form method="post" action="/beheer/foto/<%= p.id %>/groepsfoto" class="grp-form">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <button class="linkbtn grp<%= isGroup ? ' on' : '' %>" type="submit" title="<%= isGroup ? 'Klik om de groepsfoto-markering weg te halen' : 'Wijs deze foto aan als groepsfoto van dit jaar' %>"><%= isGroup ? '★ Groepsfoto' : 'Als groepsfoto' %></button>
+            </form>
             <% if (pmine) { %>
               <form method="post" action="/beheer/foto/<%= p.id %>" class="cap-form">
                 <input type="hidden" name="_csrf" value="<%= csrf %>">

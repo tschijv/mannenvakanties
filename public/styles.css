@@ -291,3 +291,17 @@ a{color:var(--pen);}
   .timeline::before{left:55px;}
   .tl-cover{width:66px;height:52px;}
 }
+
+/* ===== GROEPSFOTO'S ===== */
+.group-grid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr));}
+.group-tile{margin:0;display:flex;flex-direction:column;align-items:center;}
+.group-cap{margin-top:10px;text-align:center;font-family:var(--meta);font-size:14px;}
+.group-cap a{text-decoration:none;color:var(--stamp);}
+.group-cap a b{font-size:20px;}
+.group-cap a:hover{text-decoration:underline;}
+
+/* groepsfoto-knop in beheer */
+.grp-form{margin:6px 0 0;}
+.linkbtn.grp{font-size:12px;}
+.linkbtn.grp.on{color:var(--stamp);font-weight:700;}
+.thumb.is-group{outline:2px solid var(--stamp);outline-offset:3px;border-radius:4px;}

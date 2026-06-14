@@ -6,16 +6,7 @@
     <p class="eyebrow">Een gedeeld fotoalbum</p>
     <h1>Mannen&shy;vakanties</h1>
     <p class="tagline">Van een weekendje weg tot een jaarlijkse traditie — jaar voor jaar.</p>
-    <div class="entries">
-      <a class="entry-card is-current" href="/">
-        <span class="entry-ic" aria-hidden="true">▤</span>
-        <span class="entry-tx"><b>Tijdlijn</b><small>de jaren op een rij</small></span>
-      </a>
-      <a class="entry-card" href="/kaart">
-        <span class="entry-ic" aria-hidden="true">◉</span>
-        <span class="entry-tx"><b>Kaart</b><small>waar het gebeurde</small></span>
-      </a>
-    </div>
+    <%- include('partials/entries', { active: 'tijdlijn' }) %>
   </div>
 </header>
 

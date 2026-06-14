@@ -138,6 +138,19 @@ app.get('/kaart', (req, res) => {
   res.render('kaart', { years });
 });
 
+/* Groepsfoto's: de per jaar aangewezen foto, op jaar gesorteerd */
+function groupPhotos() {
+  return db.prepare(
+    'SELECT y.id AS year_id, y.year, y.place, p.id AS photo_id, p.src, p.caption ' +
+    'FROM years y JOIN photos p ON p.id = y.group_photo_id ' +
+    'WHERE p.deleted = 0 ORDER BY y.year ASC, y.id ASC'
+  ).all();
+}
+
+app.get('/groepsfotos', (req, res) => {
+  res.render('groepsfotos', { groups: groupPhotos() });
+});
+
 app.get('/jaar/:id', (req, res) => {
   const year = db.prepare('SELECT * FROM years WHERE id = ?').get(req.params.id);
   if (!year) return res.redirect('/');
@@ -310,6 +323,18 @@ app.post('/beheer/foto/:id/verwijderen', requireLogin, (req, res) => {
   res.redirect('/beheer/jaar/' + p.year_id);
 });
 
+/* foto aanwijzen (of weghalen) als groepsfoto van het jaar (elk lid) */
+app.post('/beheer/foto/:id/groepsfoto', requireLogin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const p = db.prepare('SELECT * FROM photos WHERE id = ? AND deleted = 0').get(req.params.id);
+  if (!p) return res.redirect('/beheer');
+  const y = db.prepare('SELECT group_photo_id FROM years WHERE id = ?').get(p.year_id);
+  const newVal = (y && y.group_photo_id === p.id) ? null : p.id;
+  db.prepare('UPDATE years SET group_photo_id = ? WHERE id = ?').run(newVal, p.year_id);
+  req.session.flash = { type: 'ok', msg: newVal ? 'Groepsfoto ingesteld voor dit jaar.' : 'Groepsfoto verwijderd.' };
+  res.redirect('/beheer/jaar/' + p.year_id);
+});
+
 /* ----- Prullenbak (alleen admin): herstellen of definitief verwijderen ----- */
 app.get('/beheer/prullenbak', requireLogin, requireAdmin, (req, res) => {
   const photos = db.prepare(
@@ -334,6 +359,7 @@ app.post('/beheer/foto/:id/definitief', requireLogin, requireAdmin, (req, res) =
   if (!checkCsrf(req, res)) return;
   const p = db.prepare('SELECT * FROM photos WHERE id = ?').get(req.params.id);
   if (p) {
+    db.prepare('UPDATE years SET group_photo_id = NULL WHERE group_photo_id = ?').run(p.id);
     db.prepare('DELETE FROM photos WHERE id = ?').run(p.id);
     if (p.src.startsWith('/uploads/')) fs.rmSync(path.join(__dirname, 'data', p.src.replace('/uploads/', 'uploads/')), { force: true });
   }

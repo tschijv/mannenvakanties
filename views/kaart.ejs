@@ -7,16 +7,7 @@
     <p class="eyebrow">Een gedeeld fotoalbum</p>
     <h1>Op de kaart</h1>
     <p class="tagline">Waar de mannen neerstreken. Klik een plek aan voor dat jaar.</p>
-    <div class="entries">
-      <a class="entry-card" href="/">
-        <span class="entry-ic" aria-hidden="true">▤</span>
-        <span class="entry-tx"><b>Tijdlijn</b><small>de jaren op een rij</small></span>
-      </a>
-      <a class="entry-card is-current" href="/kaart">
-        <span class="entry-ic" aria-hidden="true">◉</span>
-        <span class="entry-tx"><b>Kaart</b><small>waar het gebeurde</small></span>
-      </a>
-    </div>
+    <%- include('partials/entries', { active: 'kaart' }) %>
   </div>
 </header>
 

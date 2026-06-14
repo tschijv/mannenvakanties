@@ -65,6 +65,9 @@ ensureColumn('photos', 'deleted_by', 'INTEGER');
 ensureColumn('years', 'lat', 'REAL');
 ensureColumn('years', 'lng', 'REAL');
 
+/* Aangewezen groepsfoto per jaar (verwijst naar een photo-id, mag leeg zijn) */
+ensureColumn('years', 'group_photo_id', 'INTEGER');
+
 /* ------------------------------------------------------------------ */
 /*  Seed: de drie bestaande jaren (alleen als 'years' nog leeg is)     */
 /* ------------------------------------------------------------------ */

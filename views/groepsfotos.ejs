@@ -1,0 +1,54 @@
+<%- include('partials/head', { title: 'Groepsfoto\'s — Mannenvakanties' }) %>
+<%- include('partials/pubnav', { active: 'groep' }) %>
+
+<header class="cover cover-sm">
+  <div class="cover-frame">
+    <p class="eyebrow">Een gedeeld fotoalbum</p>
+    <h1>Groepsfoto's</h1>
+    <p class="tagline">Elk jaar één foto waarop iedereen samen staat — op een rij gezet.</p>
+    <%- include('partials/entries', { active: 'groep' }) %>
+  </div>
+</header>
+
+<main id="album">
+  <section class="year paper-grain">
+    <% if (groups.length) { %>
+      <div class="grid group-grid">
+        <% groups.forEach(function(g){ %>
+          <figure class="group-tile">
+            <button class="mount has-photo" type="button"
+                    data-src="<%= g.src %>" data-cap="Groepsfoto <%= g.year %><%= g.place ? ' · ' + g.place : '' %>"
+                    aria-label="Vergroot groepsfoto van <%= g.year %>">
+              <div class="frame">
+                <span class="corner tl"></span><span class="corner tr"></span>
+                <span class="corner bl"></span><span class="corner br"></span>
+                <img loading="lazy" decoding="async" src="<%= g.src %>" alt="Groepsfoto <%= g.year %>">
+              </div>
+            </button>
+            <figcaption class="group-cap">
+              <a href="/jaar/<%= g.year_id %>"><b><%= g.year %></b><% if (g.place) { %> <span class="muted">· <%= g.place %></span><% } %></a>
+            </figcaption>
+          </figure>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <p class="empty-note">Nog geen groepsfoto's aangewezen. Open een jaar in <a href="/beheer">Beheer</a> en kies bij een foto "Als groepsfoto".</p>
+    <% } %>
+  </section>
+</main>
+
+<footer class="colophon">
+  <p class="mark">M&middot;V</p>
+  <p>Mannenvakanties — het album</p>
+</footer>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Foto vergroot">
+  <button class="close" id="lbClose" aria-label="Sluiten">✕</button>
+  <figure>
+    <img id="lbImg" src="" alt="">
+    <figcaption id="lbCap"></figcaption>
+  </figure>
+</div>
+
+<script src="/gallery.js"></script>
+<%- include('partials/foot') %>
