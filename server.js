@@ -21,6 +21,9 @@ const ADMIN_USERS = (process.env.ADMIN_USERS || 'Toine,Anton')
 function isDesignatedAdmin(username) {
   return ADMIN_USERS.includes(String(username || '').trim().toLowerCase());
 }
+
+// Toegangsvraag bij het aanmelden: alleen wie het antwoord weet, mag lid worden.
+const JOIN_ANSWER = (process.env.JOIN_ANSWER || 'Utrecht').trim().toLowerCase();
 // Bij opstarten: bestaande gebruikers met zo'n naam alsnog beheerder maken.
 if (ADMIN_USERS.length) {
   const promote = db.prepare("UPDATE users SET role = 'admin' WHERE lower(username) = ? AND role <> 'admin'");
@@ -152,9 +155,11 @@ app.post('/aanmelden', (req, res) => {
   const username = String(req.body.username || '').trim();
   const password = String(req.body.password || '');
   const password2 = String(req.body.password2 || '');
+  const answer = String(req.body.answer || '').trim().toLowerCase();
 
   const fail = (error) => res.status(400).render('register', { values: { username }, error });
 
+  if (answer !== JOIN_ANSWER) return fail('Dat is niet het juiste antwoord op de toegangsvraag. Vraag het anders even na bij de groep.');
   if (username.length < 3 || username.length > 40) return fail('Kies een gebruikersnaam van 3 tot 40 tekens.');
   if (!/^[\p{L}\p{N}._\- ]+$/u.test(username)) return fail('Gebruik alleen letters, cijfers, spatie, punt, streepje of underscore.');
   if (password.length < 8) return fail('Kies een wachtwoord van minstens 8 tekens.');
