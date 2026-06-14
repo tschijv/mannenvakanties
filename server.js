@@ -174,7 +174,7 @@ app.get('/kaart', (req, res) => {
 /* Groepsfoto's: de per jaar aangewezen foto, op jaar gesorteerd */
 function groupPhotos() {
   return db.prepare(
-    'SELECT y.id AS year_id, y.year, y.place, p.id AS photo_id, p.src, p.caption ' +
+    'SELECT y.id AS year_id, y.year, y.place, p.id AS photo_id, p.src, p.caption, p.rotation ' +
     'FROM years y JOIN photos p ON p.id = y.group_photo_id ' +
     'WHERE p.deleted = 0 ORDER BY y.year ASC, y.id ASC'
   ).all();
@@ -434,6 +434,18 @@ app.post('/beheer/foto/:id/verwijderen', requireLogin, (req, res) => {
   addLog(actor(res), 'foto verwijderd uit ' + yearLabel(p.year_id));
   req.session.flash = { type: 'ok', msg: 'Foto verwijderd. Een beheerder kan hem nog herstellen.' };
   res.redirect('/beheer/jaar/' + p.year_id);
+});
+
+/* Foto draaien (45° links of rechts) — toevoeger/admin, niet-destructief */
+app.post('/beheer/foto/:id/draai', requireLogin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const p = db.prepare('SELECT * FROM photos WHERE id = ? AND deleted = 0').get(req.params.id);
+  if (!p) return res.redirect('/beheer');
+  if (!canEdit(res.locals.user, p.uploaded_by)) { req.session.flash = { type: 'err', msg: 'Je mag alleen je eigen foto\'s draaien.' }; return res.redirect('/beheer/jaar/' + p.year_id); }
+  const delta = req.body.richting === 'links' ? -45 : 45;
+  const rot = ((((p.rotation || 0) + delta) % 360) + 360) % 360;
+  db.prepare('UPDATE photos SET rotation = ? WHERE id = ?').run(rot, p.id);
+  res.redirect('/beheer/jaar/' + p.year_id + '#foto-' + p.id);
 });
 
 /* Dubbele foto's opruimen binnen een jaar (alleen admin) — zacht verwijderd, dus herstelbaar */

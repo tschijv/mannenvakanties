@@ -13,18 +13,31 @@ const lbZoomOut = document.getElementById('lbZoomOut');
 
 let items = [];
 let idx = -1;
-let scale = 1, tx = 0, ty = 0;
+let scale = 1, tx = 0, ty = 0, curRot = 0, baseFit = 1;
 const MINS = 1, MAXS = 6;
+
+function computeFit() {
+  baseFit = 1;
+  if (!curRot || curRot % 360 === 0) return;
+  const availW = Math.min(1000, window.innerWidth * 0.92), availH = window.innerHeight * 0.78;
+  const nw = lbImg.naturalWidth || 1, nh = lbImg.naturalHeight || 1;
+  const s0 = Math.min(availW / nw, availH / nh, 1);
+  const dw = nw * s0, dh = nh * s0;
+  const rad = curRot * Math.PI / 180;
+  const bw = Math.abs(dw * Math.cos(rad)) + Math.abs(dh * Math.sin(rad));
+  const bh = Math.abs(dw * Math.sin(rad)) + Math.abs(dh * Math.cos(rad));
+  baseFit = Math.min(availW / bw, availH / bh, 1);
+}
 
 function applyTransform() {
   if (scale <= 1) { scale = 1; tx = 0; ty = 0; }
   else {
-    const maxX = Math.max(0, (lbImg.offsetWidth * scale - window.innerWidth) / 2 + 40);
-    const maxY = Math.max(0, (lbImg.offsetHeight * scale - window.innerHeight) / 2 + 40);
+    const maxX = Math.max(0, (lbImg.offsetWidth * scale * baseFit - window.innerWidth) / 2 + 40);
+    const maxY = Math.max(0, (lbImg.offsetHeight * scale * baseFit - window.innerHeight) / 2 + 40);
     tx = Math.max(-maxX, Math.min(maxX, tx));
     ty = Math.max(-maxY, Math.min(maxY, ty));
   }
-  lbImg.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + scale + ')';
+  lbImg.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + (scale * baseFit) + ') rotate(' + curRot + 'deg)';
   lbImg.classList.toggle('zoomed', scale > 1);
   if (lbZoomOut) lbZoomOut.disabled = scale <= MINS;
   if (lbZoomIn) lbZoomIn.disabled = scale >= MAXS;
@@ -52,10 +65,14 @@ function show(i) {
   if (!items.length) return;
   idx = (i + items.length) % items.length;
   const it = items[idx];
-  resetZoom();
+  scale = 1; tx = 0; ty = 0;
+  curRot = it.rot || 0;
+  baseFit = 1;
+  lbImg.onload = function () { computeFit(); applyTransform(); };
   lbImg.src = it.src;
   lbImg.alt = it.cap || 'Foto';
   lbCap.textContent = it.cap || '';
+  applyTransform();
   if (lbDownload) {
     if (it.id) { lbDownload.href = '/download/foto/' + it.id; lbDownload.style.display = ''; }
     else { lbDownload.style.display = 'none'; }
@@ -80,7 +97,7 @@ function next() { show(idx + 1); }
 function prev() { show(idx - 1); }
 
 const mounts = [...document.querySelectorAll('.mount.has-photo')];
-items = mounts.map((el) => ({ src: el.dataset.src, cap: el.dataset.cap || '', id: el.dataset.id || '' }));
+items = mounts.map((el) => ({ src: el.dataset.src, cap: el.dataset.cap || '', id: el.dataset.id || '', rot: parseInt(el.dataset.rot || '0', 10) || 0 }));
 mounts.forEach((el, i) => {
   el.addEventListener('click', () => openLightbox(i));
   const img = el.querySelector('img');

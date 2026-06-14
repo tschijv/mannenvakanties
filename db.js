@@ -68,6 +68,9 @@ ensureColumn('years', 'lng', 'REAL');
 /* Aangewezen groepsfoto per jaar (verwijst naar een photo-id, mag leeg zijn) */
 ensureColumn('years', 'group_photo_id', 'INTEGER');
 
+/* Rotatiehoek per foto (graden, stappen van 45) — niet-destructief */
+ensureColumn('photos', 'rotation', 'INTEGER NOT NULL DEFAULT 0');
+
 /* Logboek: wie deed wat, wanneer (alleen voor beheerders in te zien) */
 db.exec(`
 CREATE TABLE IF NOT EXISTS logs (

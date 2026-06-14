@@ -14,15 +14,15 @@
   <section class="year paper-grain">
     <% if (groups.length) { %>
       <div class="grid group-grid">
-        <% groups.forEach(function(g){ %>
+        <% groups.forEach(function(g){ var rot = g.rotation || 0; var cs = (rot % 180 === 0) ? 1 : ((rot % 90 === 0) ? 1.34 : 1.66); %>
           <figure class="group-tile">
             <button class="mount has-photo" type="button"
-                    data-src="<%= g.src %>" data-cap="Groepsfoto <%= g.year %><%= g.place ? ' · ' + g.place : '' %>" data-id="<%= g.photo_id %>"
+                    data-src="<%= g.src %>" data-cap="Groepsfoto <%= g.year %><%= g.place ? ' · ' + g.place : '' %>" data-id="<%= g.photo_id %>" data-rot="<%= rot %>"
                     aria-label="Vergroot groepsfoto van <%= g.year %>">
               <div class="frame">
                 <span class="corner tl"></span><span class="corner tr"></span>
                 <span class="corner bl"></span><span class="corner br"></span>
-                <img loading="lazy" decoding="async" src="<%= g.src %>" alt="Groepsfoto <%= g.year %>">
+                <img loading="lazy" decoding="async" src="<%= g.src %>" alt="Groepsfoto <%= g.year %>" style="transform:rotate(<%= rot %>deg) scale(<%= cs %>);">
               </div>
             </button>
             <figcaption class="group-cap">
