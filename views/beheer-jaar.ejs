@@ -33,7 +33,7 @@
         <span class="bulk-count"><span id="bulkN">0</span> geselecteerd</span>
         <button type="button" class="btn ghost" data-bulk="links" title="90° linksom">&#8634; Links</button>
         <button type="button" class="btn ghost" data-bulk="rechts" title="90° rechtsom">&#8635; Rechts</button>
-        <button type="button" class="btn ghost danger" data-bulk="verwijderen">Verwijderen</button>
+        <button type="button" class="btn ghost danger" data-bulk="verwijderen" data-confirm="%n foto('s) verwijderen? Ze blijven herstelbaar in de prullenbak.">Verwijderen</button>
         <button type="button" class="linkbtn" id="bulkClear">Wis selectie</button>
       </form>
       <p class="thumbs-hint muted">Sleep foto's om de volgorde te wijzigen. Vink foto's aan (hoekje linksboven) voor een bulkactie.</p>
@@ -150,5 +150,5 @@
     <% } %>
   </section>
 </main>
-<script src="/beheer.js"></script>
+<script src="/beheer.js?v=<%= typeof ASSET_VER !== 'undefined' ? ASSET_VER : '1' %>"></script>
 <%- include('partials/foot') %>

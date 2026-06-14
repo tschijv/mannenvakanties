@@ -641,6 +641,52 @@ app.post('/beheer/foto/:id/definitief', requireLogin, requireAdmin, (req, res) =
   res.redirect('/beheer/prullenbak');
 });
 
+/* Bulk in de prullenbak: meerdere herstellen of definitief verwijderen */
+app.post('/beheer/prullenbak/bulk', requireLogin, requireAdmin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const action = req.body.action;
+  const ids = String(req.body.ids || '').split(',').map((s) => parseInt(s, 10)).filter(Boolean);
+  if (!ids.length || !['herstellen', 'definitief'].includes(action)) { req.session.flash = { type: 'info', msg: 'Niets geselecteerd.' }; return res.redirect('/beheer/prullenbak'); }
+  const toRemove = [];
+  let n = 0;
+  const tx = db.transaction(() => {
+    for (const id of ids) {
+      const p = db.prepare('SELECT * FROM photos WHERE id = ? AND deleted = 1').get(id);
+      if (!p) continue;
+      if (action === 'herstellen') {
+        db.prepare('UPDATE photos SET deleted = 0, deleted_at = NULL, deleted_by = NULL WHERE id = ?').run(p.id);
+      } else {
+        db.prepare('UPDATE years SET group_photo_id = NULL WHERE group_photo_id = ?').run(p.id);
+        db.prepare('DELETE FROM photos WHERE id = ?').run(p.id);
+        if (p.src.startsWith('/uploads/')) toRemove.push(p.src);
+      }
+      n++;
+    }
+  });
+  tx();
+  for (const src of toRemove) { try { fs.rmSync(path.join(__dirname, 'data', src.replace('/uploads/', 'uploads/')), { force: true }); } catch (e) {} }
+  if (n) addLog(actor(res), n + (action === 'herstellen' ? ' foto(\'s) hersteld' : ' foto(\'s) definitief verwijderd'), action === 'herstellen' ? 'content' : 'beheer');
+  req.session.flash = { type: 'ok', msg: n + ' foto(\'s) ' + (action === 'herstellen' ? 'hersteld' : 'definitief verwijderd') + '.' };
+  res.redirect('/beheer/prullenbak');
+});
+
+/* Hele prullenbak in één keer definitief legen */
+app.post('/beheer/prullenbak/leegmaken', requireLogin, requireAdmin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const photos = db.prepare('SELECT * FROM photos WHERE deleted = 1').all();
+  const tx = db.transaction(() => {
+    for (const p of photos) {
+      db.prepare('UPDATE years SET group_photo_id = NULL WHERE group_photo_id = ?').run(p.id);
+      db.prepare('DELETE FROM photos WHERE id = ?').run(p.id);
+    }
+  });
+  tx();
+  for (const p of photos) { if (p.src.startsWith('/uploads/')) { try { fs.rmSync(path.join(__dirname, 'data', p.src.replace('/uploads/', 'uploads/')), { force: true }); } catch (e) {} } }
+  if (photos.length) addLog(actor(res), 'prullenbak geleegd (' + photos.length + ' foto(\'s))', 'beheer');
+  req.session.flash = { type: 'ok', msg: photos.length + ' foto(\'s) definitief verwijderd. De prullenbak is leeg.' };
+  res.redirect('/beheer/prullenbak');
+});
+
 /* ----- Leden (alleen admin): beheerders aanwijzen ----- */
 app.get('/beheer/leden', requireLogin, requireAdmin, (req, res) => {
   const users = db.prepare('SELECT id, username, role, created_at FROM users ORDER BY created_at ASC, id ASC').all();

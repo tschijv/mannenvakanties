@@ -52,5 +52,5 @@
 
   <p class="beheer-foot"><a href="/">&larr; Terug naar het album</a></p>
 </main>
-<script src="/beheer.js"></script>
+<script src="/beheer.js?v=<%= typeof ASSET_VER !== 'undefined' ? ASSET_VER : '1' %>"></script>
 <%- include('partials/foot') %>

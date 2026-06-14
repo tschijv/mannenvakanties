@@ -392,3 +392,7 @@ a{color:var(--pen);}
 /* EXIF-stand: voor foto's waarvan we de oriëntatie al hebben verwerkt, laten we de browser
    niet nóg eens draaien — wij bepalen de stand via de rotatie. */
 .exif-fixed{image-orientation:none;}
+
+/* Prullenbak: bovenbalk met 'alles legen' */
+.trash-top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:10px;}
+.trash-top .thumbs-hint{margin:0;}

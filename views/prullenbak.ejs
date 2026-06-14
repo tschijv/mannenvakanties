@@ -10,10 +10,31 @@
 
   <section class="card">
     <% if (photos.length) { %>
+      <div class="trash-top">
+        <p class="thumbs-hint muted">Vink foto's aan (hoekje linksboven) om ze samen te herstellen of definitief te verwijderen.</p>
+        <form method="post" action="/beheer/prullenbak/leegmaken" class="inline" onsubmit="return confirm('De HELE prullenbak definitief legen? Alle <%= photos.length %> foto\'s worden permanent verwijderd. Dit kan niet ongedaan worden gemaakt.');">
+          <input type="hidden" name="_csrf" value="<%= csrf %>">
+          <button class="btn ghost danger" type="submit">Alles definitief verwijderen (<%= photos.length %>)</button>
+        </form>
+      </div>
+
+      <form method="post" action="/beheer/prullenbak/bulk" id="bulkbar" class="bulkbar" hidden>
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <input type="hidden" name="ids" id="bulkIds">
+        <input type="hidden" name="action" id="bulkAction">
+        <span class="bulk-count"><span id="bulkN">0</span> geselecteerd</span>
+        <button type="button" class="btn ghost" data-bulk="herstellen">Herstellen</button>
+        <button type="button" class="btn ghost danger" data-bulk="definitief" data-confirm="%n foto('s) definitief verwijderen? Dit kan niet ongedaan worden gemaakt.">Definitief verwijderen</button>
+        <button type="button" class="linkbtn" id="bulkClear">Wis selectie</button>
+      </form>
+
       <div class="thumbs">
         <% photos.forEach(function(p){ %>
           <div class="thumb">
-            <img loading="lazy" src="<%= p.src %>" alt="<%= p.caption || 'Foto' %>">
+            <label class="thumb-check"><input type="checkbox" class="selbox" value="<%= p.id %>" aria-label="Selecteer foto"></label>
+            <div class="thumb-pic">
+              <img loading="lazy" src="<%= p.src %>" alt="<%= p.caption || 'Foto' %>" class="<%= p.oriented ? 'exif-fixed' : '' %>" style="transform:rotate(<%= p.rotation || 0 %>deg);">
+            </div>
             <p class="cap-readonly"><%= p.caption || '· · ·' %></p>
             <p class="trash-meta"><%= p.year_label || 'onbekend jaar' %><% if (p.deleted_by_name) { %> &middot; door <%= p.deleted_by_name %><% } %><% if (p.deleted_at) { %> &middot; <%= p.deleted_at %><% } %></p>
             <div class="trash-tools">
@@ -34,4 +55,5 @@
     <% } %>
   </section>
 </main>
+<script src="/beheer.js?v=<%= typeof ASSET_VER !== 'undefined' ? ASSET_VER : '1' %>"></script>
 <%- include('partials/foot') %>

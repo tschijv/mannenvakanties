@@ -106,10 +106,10 @@ document.querySelectorAll('.cap-form').forEach(function (form) {
   bar.querySelectorAll('[data-bulk]').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var s = selected(); if (!s.length) return;
-      var act = btn.getAttribute('data-bulk');
-      if (act === 'verwijderen' && !confirm(s.length + ' foto(\'s) verwijderen? Ze blijven herstelbaar in de prullenbak.')) return;
+      var conf = btn.getAttribute('data-confirm');
+      if (conf && !confirm(conf.replace('%n', s.length))) return;
       document.getElementById('bulkIds').value = s.join(',');
-      document.getElementById('bulkAction').value = act;
+      document.getElementById('bulkAction').value = btn.getAttribute('data-bulk');
       bar.submit();
     });
   });
