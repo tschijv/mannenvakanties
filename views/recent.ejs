@@ -1,0 +1,40 @@
+<%- include('partials/head', { title: 'Recente wijzigingen — Mannenvakanties' }) %>
+<%- include('partials/pubnav', { active: 'recent' }) %>
+
+<header class="cover cover-sm">
+  <div class="cover-frame">
+    <p class="eyebrow">Een gedeeld fotoalbum</p>
+    <h1>Recente wijzigingen</h1>
+    <p class="tagline">Wat er de laatste tijd aan het album is toegevoegd of veranderd.</p>
+  </div>
+</header>
+
+<main class="recent-wrap">
+  <% if (changes.length) { %>
+    <ol class="recent-list">
+      <% changes.forEach(function(c){ %>
+        <li class="recent-item">
+          <span class="recent-when" data-utc="<%= c.created_at %>"><%= c.created_at %></span>
+          <span class="recent-line"><span class="recent-who"><%= c.username %></span> <span class="recent-what"><%= c.event %></span></span>
+        </li>
+      <% }) %>
+    </ol>
+  <% } else { %>
+    <p class="empty-note">Nog geen wijzigingen om te tonen.</p>
+  <% } %>
+</main>
+
+<footer class="colophon">
+  <p class="mark">M&middot;V</p>
+  <p>Mannenvakanties — het album</p>
+</footer>
+
+<script>
+  // Tijden staan in UTC in de database; toon ze in lokale tijd.
+  document.querySelectorAll('[data-utc]').forEach(function (el) {
+    var raw = el.getAttribute('data-utc'); if (!raw) return;
+    var d = new Date(raw.replace(' ', 'T') + 'Z');
+    if (!isNaN(d)) el.textContent = d.toLocaleString('nl-NL', { dateStyle: 'medium', timeStyle: 'short' });
+  });
+</script>
+<%- include('partials/foot') %>

@@ -315,3 +315,12 @@ a{color:var(--pen);}
 /* ===== Logboek ===== */
 .log-table td:first-child{white-space:nowrap;}
 .log-table td:nth-child(3){width:55%;}
+
+/* ===== Recente wijzigingen ===== */
+.pubnav{flex-wrap:wrap;}
+.recent-wrap{max-width:740px;margin:0 auto;padding:clamp(34px,7vw,80px) clamp(16px,5vw,28px);}
+.recent-list{list-style:none;margin:0;padding:0;}
+.recent-item{padding:11px 2px;border-bottom:1px solid var(--paper-edge);}
+.recent-when{display:block;font-family:var(--meta);font-size:11.5px;color:var(--ink-faint,#8a7b6c);margin-bottom:3px;}
+.recent-who{font-weight:700;color:var(--stamp);}
+.recent-what{color:var(--ink);}

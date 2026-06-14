@@ -74,9 +74,11 @@ CREATE TABLE IF NOT EXISTS logs (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   username   TEXT,
-  event      TEXT NOT NULL
+  event      TEXT NOT NULL,
+  kind       TEXT NOT NULL DEFAULT 'content'
 );
 `);
+ensureColumn('logs', 'kind', "TEXT NOT NULL DEFAULT 'content'");
 
 /* ------------------------------------------------------------------ */
 /*  Seed: de drie bestaande jaren (alleen als 'years' nog leeg is)     */

@@ -23,11 +23,16 @@ function isDesignatedAdmin(username) {
 }
 
 // Toegangsvraag bij het aanmelden: alleen wie het antwoord weet, mag lid worden.
-const JOIN_ANSWER = (process.env.JOIN_ANSWER || 'Utrecht').trim().toLowerCase();
+// Antwoorden worden genormaliseerd (kleine letters, accenten weg), zodat
+// "Moldavië" en "Moldavie" allebei goed zijn.
+function normAnswer(s) {
+  return String(s == null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+const JOIN_ANSWER = normAnswer(process.env.JOIN_ANSWER || 'Moldavië');
 
-// Logboek: leg een gebeurtenis vast (wie deed wat).
-function addLog(username, event) {
-  try { db.prepare('INSERT INTO logs (username, event) VALUES (?, ?)').run(username || 'onbekend', event); } catch (e) { /* logging mag nooit de actie blokkeren */ }
+// Logboek: leg een gebeurtenis vast (wie deed wat). kind: 'content' | 'lid' | 'beheer'.
+function addLog(username, event, kind) {
+  try { db.prepare('INSERT INTO logs (username, event, kind) VALUES (?, ?, ?)').run(username || 'onbekend', event, kind || 'content'); } catch (e) { /* logging mag nooit de actie blokkeren */ }
 }
 function actor(res) { return (res.locals.user && res.locals.user.username) ? res.locals.user.username : 'onbekend'; }
 function yearLabel(id) { const y = db.prepare('SELECT year FROM years WHERE id = ?').get(id); return y ? y.year : ('jaar ' + id); }
@@ -158,6 +163,12 @@ app.get('/groepsfotos', (req, res) => {
   res.render('groepsfotos', { groups: groupPhotos() });
 });
 
+/* Recente wijzigingen: album-veranderingen en nieuwe leden, voor iedereen zichtbaar */
+app.get('/recent', (req, res) => {
+  const changes = db.prepare("SELECT created_at, username, event FROM logs WHERE kind IN ('content','lid') ORDER BY id DESC LIMIT 100").all();
+  res.render('recent', { changes });
+});
+
 app.get('/jaar/:id', (req, res) => {
   const year = db.prepare('SELECT * FROM years WHERE id = ?').get(req.params.id);
   if (!year) return res.redirect('/');
@@ -175,7 +186,7 @@ app.post('/aanmelden', (req, res) => {
   const username = String(req.body.username || '').trim();
   const password = String(req.body.password || '');
   const password2 = String(req.body.password2 || '');
-  const answer = String(req.body.answer || '').trim().toLowerCase();
+  const answer = normAnswer(req.body.answer);
 
   const fail = (error) => res.status(400).render('register', { values: { username }, error });
 
@@ -195,7 +206,7 @@ app.post('/aanmelden', (req, res) => {
     .run(username, hash, role);
 
   req.session.userId = info.lastInsertRowid;
-  addLog(username, 'is lid geworden' + (role === 'admin' ? ' (beheerder)' : ''));
+  addLog(username, 'is lid geworden' + (role === 'admin' ? ' (beheerder)' : ''), 'lid');
   req.session.flash = { type: 'ok', msg: 'Welkom, ' + username + '! Je bent nu lid.' };
   res.redirect('/beheer');
 });
@@ -419,7 +430,7 @@ app.post('/beheer/leden/:id/rol', requireLogin, requireAdmin, (req, res) => {
   if (target.id === res.locals.user.id) { req.session.flash = { type: 'err', msg: 'Je kunt je eigen rol niet wijzigen (om uitsluiting te voorkomen).' }; return res.redirect('/beheer/leden'); }
   const newRole = target.role === 'admin' ? 'member' : 'admin';
   db.prepare('UPDATE users SET role = ? WHERE id = ?').run(newRole, target.id);
-  addLog(actor(res), target.username + ' is nu ' + (newRole === 'admin' ? 'beheerder' : 'lid'));
+  addLog(actor(res), target.username + ' is nu ' + (newRole === 'admin' ? 'beheerder' : 'lid'), 'beheer');
   req.session.flash = { type: 'ok', msg: target.username + ' is nu ' + (newRole === 'admin' ? 'beheerder' : 'lid') + '.' };
   res.redirect('/beheer/leden');
 });
@@ -440,7 +451,7 @@ app.post('/beheer/leden/:id/verwijderen', requireLogin, requireAdmin, (req, res)
     db.prepare('DELETE FROM users WHERE id = ?').run(target.id);
   });
   tx();
-  addLog(actor(res), 'lid "' + target.username + '" verwijderd');
+  addLog(actor(res), 'lid "' + target.username + '" verwijderd', 'beheer');
   req.session.flash = { type: 'ok', msg: 'Lid "' + target.username + '" verwijderd. Geüploade foto\'s en jaren blijven bewaard.' };
   res.redirect('/beheer/leden');
 });
