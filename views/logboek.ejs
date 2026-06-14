@@ -1,0 +1,39 @@
+<%- include('partials/head', { title: 'Logboek — Beheer' }) %>
+<%- include('partials/topbar') %>
+
+<main class="beheer">
+  <p class="beheer-foot"><a href="/beheer">&larr; Terug naar beheer</a></p>
+  <header class="beheer-head">
+    <h1>Logboek</h1>
+    <p>Wie deed wat, en wanneer. De laatste 300 gebeurtenissen, nieuwste bovenaan.</p>
+  </header>
+
+  <section class="card">
+    <% if (logs.length) { %>
+      <table class="leden-table log-table">
+        <thead><tr><th>Wanneer</th><th>Wie</th><th>Wat</th></tr></thead>
+        <tbody>
+          <% logs.forEach(function(l){ %>
+            <tr>
+              <td class="muted log-time" data-utc="<%= l.created_at %>"><%= l.created_at %></td>
+              <td><%= l.username %></td>
+              <td><%= l.event %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } else { %>
+      <p class="muted">Nog niets gelogd.</p>
+    <% } %>
+  </section>
+</main>
+
+<script>
+  // Database slaat tijden in UTC op; toon ze in lokale (Nederlandse) tijd.
+  document.querySelectorAll('.log-time').forEach(function (el) {
+    var raw = el.getAttribute('data-utc'); if (!raw) return;
+    var d = new Date(raw.replace(' ', 'T') + 'Z');
+    if (!isNaN(d)) el.textContent = d.toLocaleString('nl-NL', { dateStyle: 'medium', timeStyle: 'short' });
+  });
+</script>
+<%- include('partials/foot') %>

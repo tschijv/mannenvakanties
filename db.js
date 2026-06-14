@@ -68,6 +68,16 @@ ensureColumn('years', 'lng', 'REAL');
 /* Aangewezen groepsfoto per jaar (verwijst naar een photo-id, mag leeg zijn) */
 ensureColumn('years', 'group_photo_id', 'INTEGER');
 
+/* Logboek: wie deed wat, wanneer (alleen voor beheerders in te zien) */
+db.exec(`
+CREATE TABLE IF NOT EXISTS logs (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  username   TEXT,
+  event      TEXT NOT NULL
+);
+`);
+
 /* ------------------------------------------------------------------ */
 /*  Seed: de drie bestaande jaren (alleen als 'years' nog leeg is)     */
 /* ------------------------------------------------------------------ */

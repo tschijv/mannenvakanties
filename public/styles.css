@@ -311,3 +311,7 @@ a{color:var(--pen);}
 .btn.ghost{background:transparent;border:1px solid var(--paper-edge,#d8cdbb);color:var(--ink,#5b4636);box-shadow:none;font-size:14px;}
 .btn.ghost:hover{background:rgba(40,28,18,.05);}
 [data-geocode-status]{font-size:13px;line-height:1.4;}
+
+/* ===== Logboek ===== */
+.log-table td:first-child{white-space:nowrap;}
+.log-table td:nth-child(3){width:55%;}
