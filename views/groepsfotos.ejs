@@ -17,7 +17,7 @@
         <% groups.forEach(function(g){ var rot = g.rotation || 0; var cs = (rot % 180 === 0) ? 1 : ((rot % 90 === 0) ? 1.34 : 1.66); %>
           <figure class="group-tile">
             <button class="mount has-photo" type="button"
-                    data-src="<%= g.src %>" data-cap="Groepsfoto <%= g.year %><%= g.place ? ' · ' + g.place : '' %>" data-id="<%= g.photo_id %>" data-year-id="<%= g.year_id %>" data-rot="<%= rot %>" data-oriented="<%= g.oriented ? 1 : 0 %>"
+                    data-src="<%= g.src %>" data-cap="Groepsfoto <%= g.year %><%= g.place ? ' · ' + g.place : '' %>" data-id="<%= g.photo_id %>" data-rot="<%= rot %>" data-oriented="<%= g.oriented ? 1 : 0 %>"
                     aria-label="Vergroot groepsfoto van <%= g.year %>">
               <div class="frame">
                 <span class="corner tl"></span><span class="corner tr"></span>
@@ -54,7 +54,7 @@
     <img id="lbImg" src="" alt="">
     <figcaption id="lbCap"></figcaption>
   </figure>
-  <% if (user) { %><a class="lb-edit" id="lbEdit" href="#">Bewerk foto</a> <a class="lb-download" id="lbDownload" href="#" download>Download foto</a><% } %>
+  <% if (user) { %><a class="lb-download" id="lbDownload" href="#" download>Download foto</a><% } %>
 </div>
 
 <script src="/gallery.js?v=<%= typeof ASSET_VER !== 'undefined' ? ASSET_VER : '1' %>"></script>

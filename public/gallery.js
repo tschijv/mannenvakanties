@@ -8,7 +8,6 @@ const lbClose = document.getElementById('lbClose');
 const lbPrev = document.getElementById('lbPrev');
 const lbNext = document.getElementById('lbNext');
 const lbDownload = document.getElementById('lbDownload');
-const lbEdit = document.getElementById('lbEdit');
 const lbZoomIn = document.getElementById('lbZoomIn');
 const lbZoomOut = document.getElementById('lbZoomOut');
 
@@ -79,10 +78,6 @@ function show(i) {
     if (it.id) { lbDownload.href = '/download/foto/' + it.id; lbDownload.style.display = ''; }
     else { lbDownload.style.display = 'none'; }
   }
-  if (lbEdit) {
-    if (it.id && it.yearId) { lbEdit.href = '/beheer/jaar/' + it.yearId + '#foto-' + it.id; lbEdit.style.display = ''; }
-    else { lbEdit.style.display = 'none'; }
-  }
   const many = items.length > 1;
   if (lbPrev) lbPrev.style.display = many ? '' : 'none';
   if (lbNext) lbNext.style.display = many ? '' : 'none';
@@ -103,7 +98,7 @@ function next() { show(idx + 1); }
 function prev() { show(idx - 1); }
 
 const mounts = [...document.querySelectorAll('.mount.has-photo')];
-items = mounts.map((el) => ({ src: el.dataset.src, cap: el.dataset.cap || '', id: el.dataset.id || '', yearId: el.dataset.yearId || '', rot: parseInt(el.dataset.rot || '0', 10) || 0, oriented: el.dataset.oriented === '1' }));
+items = mounts.map((el) => ({ src: el.dataset.src, cap: el.dataset.cap || '', id: el.dataset.id || '', rot: parseInt(el.dataset.rot || '0', 10) || 0, oriented: el.dataset.oriented === '1' }));
 mounts.forEach((el, i) => {
   el.addEventListener('click', () => openLightbox(i));
   const img = el.querySelector('img');
