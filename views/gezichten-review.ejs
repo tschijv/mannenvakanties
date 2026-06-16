@@ -6,6 +6,7 @@
   <header class="beheer-head">
     <h1>Gezichten controleren</h1>
     <p>Automatisch gevonden gezichten die nog geen naam hebben. Ze staan gegroepeerd op gelijkenis — koppel een hele groep in één keer aan een persoon, of verwijder missers. <strong><%= total %></strong> nog te doen.</p>
+    <% if (total) { %><p class="year-tools"><a class="btn" href="/beheer/gezichten/benoem">Begeleid benoemen (één groep tegelijk) &rarr;</a></p><% } %>
   </header>
 
   <% if (!total) { %>

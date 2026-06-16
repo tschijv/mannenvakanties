@@ -355,14 +355,78 @@ app.get('/namen', requireLogin, (req, res) => {
   res.render('namen', { persons: personsOverview(), untagged: untaggedFaceCount() });
 });
 
-// Review-inbox: nog niet toegewezen (auto-gedetecteerde) gezichten, op gelijkenis gegroepeerd.
-app.get('/beheer/gezichten', requireLogin, (req, res) => {
+// Alle nog niet toegewezen gezichten (met fotobron + jaar), eventueel exclusief overgeslagen ids.
+function untaggedFacesList(skip) {
   const faces = db.prepare(
     'SELECT f.id, f.x, f.y, f.w, f.h, f.descriptor, f.photo_id, p.src, y.year, y.id AS year_id ' +
     'FROM faces f JOIN photos p ON p.id = f.photo_id JOIN years y ON y.id = p.year_id ' +
     'WHERE f.person_id IS NULL AND p.deleted = 0 ORDER BY y.year ASC, p.id ASC, f.id ASC'
   ).all();
+  if (!skip || !skip.length) return faces;
+  const s = new Set(skip);
+  return faces.filter((f) => !s.has(f.id));
+}
+
+// Review-inbox: nog niet toegewezen (auto-gedetecteerde) gezichten, op gelijkenis gegroepeerd.
+app.get('/beheer/gezichten', requireLogin, (req, res) => {
+  const faces = untaggedFacesList();
   res.render('gezichten-review', { groups: clusterFaces(faces), total: faces.length, persons: personsForSelect(), names: namedPersonNames() });
+});
+
+// Begeleide benoem-modus: één gelijkenis-groep tegelijk, groot in beeld.
+app.get('/beheer/gezichten/benoem', requireLogin, (req, res) => {
+  const skip = req.session.faceSkip || [];
+  const faces = untaggedFacesList(skip);
+  const totalUntagged = untaggedFaceCount();
+  if (!faces.length) {
+    return res.render('benoem', { group: null, totalUntagged, skipped: skip.length, remaining: 0, groupsLeft: 0, names: namedPersonNames(), persons: personsForSelect() });
+  }
+  const clusters = clusterFaces(faces);
+  res.render('benoem', {
+    group: clusters[0], totalUntagged, skipped: skip.length,
+    remaining: faces.length, groupsLeft: clusters.length,
+    names: namedPersonNames(), persons: personsForSelect()
+  });
+});
+
+// Begeleid: groep opslaan (alleen aangevinkte gezichten) en door naar de volgende.
+app.post('/beheer/gezichten/benoem/opslaan', requireLogin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const allIds = String(req.body.all_ids || '').split(',').map((n) => parseInt(n, 10)).filter(Boolean);
+  let checked = req.body.ids;
+  if (checked === undefined) checked = [];
+  else if (!Array.isArray(checked)) checked = [checked];
+  checked = checked.map((n) => parseInt(n, 10)).filter(Boolean);
+  const personId = resolvePerson(req, res, { allowCreate: true });
+  if (!personId) {
+    req.session.flash = { type: 'err', msg: 'Vul een naam in of kies “Naamloos opslaan”.' };
+    return res.redirect('/beheer/gezichten/benoem');
+  }
+  if (checked.length) {
+    const upd = db.prepare('UPDATE faces SET person_id = ? WHERE id = ? AND person_id IS NULL');
+    const tx = db.transaction(() => { for (const id of checked) upd.run(personId, id); });
+    tx();
+    addLog(actor(res), checked.length + ' gezicht(en) benoemd', 'content');
+  }
+  // Niet-aangevinkte gezichten uit deze groep voorlopig overslaan (komen later terug via "opnieuw").
+  const unchecked = allIds.filter((id) => !checked.includes(id));
+  if (unchecked.length) req.session.faceSkip = (req.session.faceSkip || []).concat(unchecked);
+  res.redirect('/beheer/gezichten/benoem');
+});
+
+// Begeleid: hele groep overslaan.
+app.post('/beheer/gezichten/benoem/overslaan', requireLogin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const allIds = String(req.body.all_ids || '').split(',').map((n) => parseInt(n, 10)).filter(Boolean);
+  req.session.faceSkip = (req.session.faceSkip || []).concat(allIds);
+  res.redirect('/beheer/gezichten/benoem');
+});
+
+// Begeleid: overgeslagen weer meenemen.
+app.post('/beheer/gezichten/benoem/reset', requireLogin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  req.session.faceSkip = [];
+  res.redirect('/beheer/gezichten/benoem');
 });
 
 // Een groep gezichten in één keer aan een persoon koppelen.

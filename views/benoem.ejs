@@ -1,0 +1,75 @@
+<%- include('partials/head', { title: 'Benoemen — Beheer' }) %>
+<%- include('partials/topbar') %>
+
+<main class="beheer benoem">
+  <p class="beheer-foot"><a href="/beheer/gezichten">Lijstweergave</a> &middot; <a href="/namen">Namen</a></p>
+  <header class="beheer-head">
+    <h1>Wie is dit?</h1>
+    <p>Gelijkende gezichten staan bij elkaar. Geef ze een naam en ga door. Hoort er eentje niet bij? Vink hem uit.</p>
+    <p class="benoem-progress">
+      <strong><%= totalUntagged %></strong> nog te benoemen<% if (skipped) { %> &middot; <%= skipped %> overgeslagen<% } %>
+    </p>
+  </header>
+
+  <% if (!group) { %>
+    <section class="card benoem-done">
+      <p>🎉 Niets meer in de wachtrij<% if (skipped) { %> — op <%= skipped %> overgeslagen gezicht<%= skipped === 1 ? '' : 'en' %> na<% } %>.</p>
+      <div class="benoem-actions">
+        <% if (skipped) { %>
+          <form method="post" action="/beheer/gezichten/benoem/reset">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <button class="btn" type="submit">Overgeslagen opnieuw bekijken</button>
+          </form>
+        <% } %>
+        <a class="btn ghost" href="/namen">Naar de namen</a>
+      </div>
+    </section>
+  <% } else { %>
+    <% var allIds = group.items.map(function(f){ return f.id; }).join(','); %>
+    <section class="card">
+      <form method="post" action="/beheer/gezichten/benoem/opslaan" class="benoem-form">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <input type="hidden" name="all_ids" value="<%= allIds %>">
+
+        <div class="benoem-faces">
+          <% group.items.forEach(function(f){ %>
+            <label class="benoem-face">
+              <input type="checkbox" name="ids" value="<%= f.id %>" checked>
+              <span class="benoem-thumb face-thumb"><%- include('partials/facecrop', { face: { x:f.x, y:f.y, w:f.w, h:f.h, src: f.src } }) %></span>
+              <span class="benoem-face-meta"><%= f.year %></span>
+              <span class="benoem-check" aria-hidden="true">✓</span>
+            </label>
+          <% }) %>
+        </div>
+
+        <div class="benoem-name">
+          <label class="field grow"><span>Naam</span>
+            <input type="text" name="new_name" list="namenlijst" placeholder="Typ een naam…" autocomplete="off" autofocus>
+          </label>
+          <label class="field grow"><span>…of bestaande persoon</span>
+            <select name="person_id">
+              <option value="">—</option>
+              <% persons.forEach(function(p){ %><option value="<%= p.id %>"><%= p.label %></option><% }) %>
+            </select>
+          </label>
+        </div>
+
+        <div class="benoem-actions">
+          <button class="btn" type="submit">Opslaan &amp; volgende &rarr;</button>
+          <button class="btn ghost" type="submit" name="create_unnamed" value="1" title="Sla op als naamloze persoon; naam kan later">Naamloos opslaan</button>
+        </div>
+      </form>
+
+      <form method="post" action="/beheer/gezichten/benoem/overslaan" class="benoem-skip">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <input type="hidden" name="all_ids" value="<%= allIds %>">
+        <button class="linkbtn" type="submit">Deze groep overslaan</button>
+      </form>
+    </section>
+
+    <datalist id="namenlijst">
+      <% names.forEach(function(n){ %><option value="<%= n %>"></option><% }) %>
+    </datalist>
+  <% } %>
+</main>
+<%- include('partials/foot') %>

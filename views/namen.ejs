@@ -8,7 +8,7 @@
     <p class="year-hero-note">De mannen door de jaren heen. Klik op een gezicht voor alle foto's van die persoon. Nog naamloos? Vul de naam aan op de persoonspagina.</p>
     <p class="year-hero-count"><%= persons.length %> <%= persons.length === 1 ? 'persoon' : 'personen' %></p>
     <% if (typeof untagged !== 'undefined' && untagged) { %>
-      <p class="year-tools"><a class="btn" href="/beheer/gezichten"><%= untagged %> gevonden gezicht<%= untagged === 1 ? '' : 'en' %> nog te benoemen &rarr;</a></p>
+      <p class="year-tools"><a class="btn" href="/beheer/gezichten/benoem"><%= untagged %> gevonden gezicht<%= untagged === 1 ? '' : 'en' %> nog te benoemen &rarr;</a></p>
     <% } %>
     <form method="post" action="/beheer/persoon" class="names-add">
       <input type="hidden" name="_csrf" value="<%= csrf %>">

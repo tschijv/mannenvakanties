@@ -461,6 +461,25 @@ a{color:var(--pen);}
 .linkbtn.danger{color:var(--stamp);}
 .small{font-size:.85em;}
 
+/* begeleide benoem-modus */
+.benoem-progress{font-family:var(--meta);font-size:12px;color:var(--ink-soft);}
+.benoem-faces{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-bottom:22px;}
+.benoem-face{position:relative;width:120px;cursor:pointer;text-align:center;}
+.benoem-face input{position:absolute;opacity:0;width:0;height:0;}
+.benoem-thumb{width:120px;height:120px;border-radius:12px;transition:opacity .15s,filter .15s,box-shadow .15s;}
+.benoem-face:has(input:checked) .benoem-thumb{box-shadow:0 0 0 3px var(--gold);}
+.benoem-face:has(input:not(:checked)) .benoem-thumb{opacity:.4;filter:grayscale(1);}
+.benoem-face-meta{display:block;font-family:var(--meta);font-size:10px;color:var(--ink-faint);margin-top:4px;}
+.benoem-check{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:var(--gold);color:var(--leather);font-size:13px;line-height:22px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.4);}
+.benoem-face:has(input:not(:checked)) .benoem-check{background:rgba(120,95,60,.5);color:transparent;}
+.benoem-name{display:flex;gap:14px;flex-wrap:wrap;max-width:640px;margin:0 auto 18px;}
+.benoem-name .field input,.benoem-name .field select{font-size:1.05rem;}
+.benoem-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;align-items:center;}
+.benoem-actions form{margin:0;}
+.benoem-skip{margin:16px 0 0;text-align:center;}
+.benoem-done{text-align:center;}
+.benoem-done .benoem-actions{margin-top:14px;}
+
 /* review-inbox voor gevonden gezichten */
 .review-group{margin-bottom:18px;}
 .review-faces{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:14px;}
