@@ -255,4 +255,8 @@ db.prepare(
   "WHERE src LIKE '%Verdun/slides/%IMGP%.jpg' AND src NOT GLOB '*.JPG'"
 ).run();
 
+// Offline gedetecteerde gezichten (seed/faces.json) inlezen, indien aanwezig.
+try { require('./face-seed').importFaceSeed(db); }
+catch (e) { console.error('Gezichten-seed overslaan:', e.message); }
+
 module.exports = { db, DATA_DIR, UPLOAD_DIR };

@@ -13,6 +13,10 @@
         &middot; <a href="/beheer/statistieken">Statistieken</a>
       </p>
     <% } %>
+    <p class="beheer-adminlinks">
+      <a href="/namen">Namen &amp; gezichten</a>
+      <% if (typeof untaggedFaces !== 'undefined' && untaggedFaces) { %>&middot; <a href="/beheer/gezichten"><%= untaggedFaces %> gezicht<%= untaggedFaces === 1 ? '' : 'en' %> te benoemen</a><% } %>
+    </p>
   </header>
 
   <section class="card">

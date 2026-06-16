@@ -307,8 +307,70 @@ function personsForSelect() {
   return persons;
 }
 
+function untaggedFaceCount() {
+  return db.prepare(
+    'SELECT COUNT(*) AS n FROM faces f JOIN photos p ON p.id = f.photo_id ' +
+    'WHERE f.person_id IS NULL AND p.deleted = 0'
+  ).get().n;
+}
+
+// Euclidische afstand tussen twee gezichtskenmerk-vectoren (128 floats).
+function faceDistance(a, b) {
+  let s = 0;
+  for (let i = 0; i < a.length; i++) { const d = a[i] - b[i]; s += d * d; }
+  return Math.sqrt(s);
+}
+
+// Groepeer (greedy) niet-toegewezen gezichten op gelijkenis, grootste groep eerst.
+function clusterFaces(faces) {
+  const TH = 0.55; // face-api descriptor-drempel; lager = strenger
+  const clusters = [];
+  for (const f of faces) {
+    let d = null;
+    if (f.descriptor) { try { d = JSON.parse(f.descriptor); } catch (e) { d = null; } }
+    if (!d) { clusters.push({ rep: null, items: [f] }); continue; }
+    let best = null, bestDist = Infinity;
+    for (const c of clusters) {
+      if (!c.rep) continue;
+      const dist = faceDistance(d, c.rep);
+      if (dist < bestDist) { bestDist = dist; best = c; }
+    }
+    if (best && bestDist < TH) best.items.push(f);
+    else clusters.push({ rep: d, items: [f] });
+  }
+  clusters.sort((a, b) => b.items.length - a.items.length);
+  return clusters;
+}
+
 app.get('/namen', requireLogin, (req, res) => {
-  res.render('namen', { persons: personsOverview() });
+  res.render('namen', { persons: personsOverview(), untagged: untaggedFaceCount() });
+});
+
+// Review-inbox: nog niet toegewezen (auto-gedetecteerde) gezichten, op gelijkenis gegroepeerd.
+app.get('/beheer/gezichten', requireLogin, (req, res) => {
+  const faces = db.prepare(
+    'SELECT f.id, f.x, f.y, f.w, f.h, f.descriptor, f.photo_id, p.src, y.year, y.id AS year_id ' +
+    'FROM faces f JOIN photos p ON p.id = f.photo_id JOIN years y ON y.id = p.year_id ' +
+    'WHERE f.person_id IS NULL AND p.deleted = 0 ORDER BY y.year ASC, p.id ASC, f.id ASC'
+  ).all();
+  res.render('gezichten-review', { groups: clusterFaces(faces), total: faces.length, persons: personsForSelect() });
+});
+
+// Een groep gezichten in één keer aan een persoon koppelen.
+app.post('/beheer/gezichten/groep', requireLogin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const ids = String(req.body.ids || '').split(',').map((s) => parseInt(s, 10)).filter(Boolean);
+  if (!ids.length) return res.redirect('/beheer/gezichten');
+  const personId = resolvePerson(req, res, { allowCreate: true });
+  if (!personId) {
+    req.session.flash = { type: 'err', msg: 'Kies een persoon, vul een naam in, of maak een naamloze persoon.' };
+    return res.redirect('/beheer/gezichten');
+  }
+  const upd = db.prepare('UPDATE faces SET person_id = ? WHERE id = ? AND person_id IS NULL');
+  const tx = db.transaction(() => { for (const id of ids) upd.run(personId, id); });
+  tx();
+  addLog(actor(res), ids.length + ' gezicht(en) toegewezen', 'content');
+  res.redirect('/beheer/gezichten');
 });
 
 app.get('/persoon/:id', requireLogin, (req, res) => {
@@ -569,7 +631,7 @@ app.get('/beheer', requireLogin, (req, res) => {
     'FROM years y ORDER BY y.year ASC, y.id ASC'
   ).all();
   const trashCount = db.prepare('SELECT COUNT(*) AS n FROM photos WHERE deleted = 1').get().n;
-  res.render('beheer', { years, trashCount });
+  res.render('beheer', { years, trashCount, untaggedFaces: untaggedFaceCount() });
 });
 
 /* Eén jaar: pas hier worden de foto's getoond */

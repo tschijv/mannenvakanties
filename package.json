@@ -5,7 +5,8 @@
   "description": "Mannenvakanties — gedeeld reisalbum met leden, foto-uploads en jaren",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "scan-faces": "node scripts/scan-faces.js"
   },
   "engines": {
     "node": ">=18"

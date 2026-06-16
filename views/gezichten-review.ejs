@@ -1,0 +1,48 @@
+<%- include('partials/head', { title: 'Gezichten controleren — Beheer' }) %>
+<%- include('partials/topbar') %>
+
+<main class="beheer">
+  <p class="beheer-foot"><a href="/namen">&larr; Namen</a></p>
+  <header class="beheer-head">
+    <h1>Gezichten controleren</h1>
+    <p>Automatisch gevonden gezichten die nog geen naam hebben. Ze staan gegroepeerd op gelijkenis — koppel een hele groep in één keer aan een persoon, of verwijder missers. <strong><%= total %></strong> nog te doen.</p>
+  </header>
+
+  <% if (!total) { %>
+    <section class="card"><p class="muted">Niets meer te controleren — alle gevonden gezichten zijn toegewezen. 🎉</p></section>
+  <% } %>
+
+  <% groups.forEach(function(g, gi){ %>
+    <section class="card review-group">
+      <div class="review-faces">
+        <% g.items.forEach(function(f){ %>
+          <div class="review-face">
+            <span class="face-thumb sm"><%- include('partials/facecrop', { face: { x:f.x, y:f.y, w:f.w, h:f.h, src: f.src } }) %></span>
+            <span class="review-face-meta"><%= f.year %></span>
+            <form method="post" action="/beheer/gezicht/<%= f.id %>/verwijderen" class="review-dismiss" onsubmit="return confirm('Dit gezicht verwijderen? (geen persoon)');">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <input type="hidden" name="back" value="/beheer/gezichten">
+              <button class="review-x" type="submit" title="Geen gezicht / verwijderen" aria-label="Verwijderen">✕</button>
+            </form>
+          </div>
+        <% }) %>
+      </div>
+
+      <form method="post" action="/beheer/gezichten/groep" class="review-assign form row">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <input type="hidden" name="ids" value="<%= g.items.map(function(f){return f.id;}).join(',') %>">
+        <span class="review-count"><%= g.items.length %> gezicht<%= g.items.length === 1 ? '' : 'en' %></span>
+        <label class="field grow"><span>Bestaande persoon</span>
+          <select name="person_id">
+            <option value="">— nieuw —</option>
+            <% persons.forEach(function(p){ %><option value="<%= p.id %>"><%= p.label %></option><% }) %>
+          </select>
+        </label>
+        <label class="field grow"><span>…of naam</span><input type="text" name="new_name" placeholder="bv. Kees" autocomplete="off"></label>
+        <button class="btn" type="submit">Koppelen</button>
+        <button class="btn ghost" type="submit" name="create_unnamed" value="1" title="Maak hier vast een naamloze persoon van; naam kan later">Naamloos</button>
+      </form>
+    </section>
+  <% }) %>
+</main>
+<%- include('partials/foot') %>
