@@ -362,8 +362,7 @@ app.get('/beheer/gezichten', requireLogin, (req, res) => {
     'FROM faces f JOIN photos p ON p.id = f.photo_id JOIN years y ON y.id = p.year_id ' +
     'WHERE f.person_id IS NULL AND p.deleted = 0 ORDER BY y.year ASC, p.id ASC, f.id ASC'
   ).all();
-  const names = db.prepare("SELECT name FROM persons WHERE name <> '' ORDER BY name COLLATE NOCASE ASC").all().map((r) => r.name);
-  res.render('gezichten-review', { groups: clusterFaces(faces), total: faces.length, persons: personsForSelect(), names });
+  res.render('gezichten-review', { groups: clusterFaces(faces), total: faces.length, persons: personsForSelect(), names: namedPersonNames() });
 });
 
 // Een groep gezichten in één keer aan een persoon koppelen.
@@ -416,7 +415,21 @@ app.get('/beheer/foto/:id/gezichten', requireLogin, (req, res) => {
     'SELECT f.*, pe.name AS person_name FROM faces f LEFT JOIN persons pe ON pe.id = f.person_id ' +
     'WHERE f.photo_id = ? ORDER BY f.id ASC'
   ).all(photo.id);
-  res.render('foto-gezichten', { photo, faces, persons: personsForSelect() });
+  res.render('foto-gezichten', { photo, faces, persons: personsForSelect(), names: namedPersonNames() });
+});
+
+// Bestaande namen (voor autocomplete-datalists).
+function namedPersonNames() {
+  return db.prepare("SELECT name FROM persons WHERE name <> '' ORDER BY name COLLATE NOCASE ASC").all().map((r) => r.name);
+}
+
+// Nieuwe persoon aanmaken (mag nog zonder foto's).
+app.post('/beheer/persoon', requireLogin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const name = (req.body.name || '').trim();
+  const id = Number(db.prepare('INSERT INTO persons (name, created_by) VALUES (?, ?)').run(name, res.locals.user.id).lastInsertRowid);
+  addLog(actor(res), 'persoon toegevoegd' + (name ? ' "' + name + '"' : ' (naamloos)'), 'content');
+  res.redirect('/persoon/' + id);
 });
 
 // Persoon (of nieuwe naam) bepalen uit het formulier; geeft persoon-id terug.

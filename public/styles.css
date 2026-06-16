@@ -201,6 +201,10 @@ a{color:var(--pen);}
   text-decoration: none; color: inherit; min-width: 0; }
 .year-row-title { font-weight: 700; font-size: 1.1rem; }
 .year-row-count { color: var(--muted, #8a7b6c); font-size: .9rem; white-space: nowrap; }
+.year-row-meta { display: flex; align-items: center; gap: .6rem; white-space: nowrap; }
+.geo-badge { font-family: var(--meta); font-size: 11px; letter-spacing: .03em; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.geo-badge.has-geo { background: rgba(39,67,92,.12); color: var(--pen); }
+.geo-badge.no-geo { background: rgba(156,59,46,.14); color: var(--stamp); font-weight: 600; }
 .year-row:hover { background: rgba(255,255,255,.85); }
 .btn.small { padding: .35rem .7rem; font-size: .9rem; white-space: nowrap; }
 
@@ -402,6 +406,9 @@ a{color:var(--pen);}
 
 /* ---------- NAMEN / WIE IS WIE ---------- */
 .names-wrap{max-width:1100px;margin:0 auto;padding:clamp(28px,5vw,64px) clamp(16px,5vw,40px) clamp(56px,9vw,110px);}
+.names-add{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:18px 0 4px;}
+.names-add input[type=text]{flex:1 1 240px;max-width:340px;padding:9px 12px;border:1px solid var(--paper-edge);border-radius:6px;background:rgba(255,255,255,.7);font:inherit;color:var(--ink);}
+.names-add-hint{font-family:var(--meta);font-size:11px;color:var(--ink-soft);margin:0;}
 .face-grid{list-style:none;margin:0;padding:0;display:grid;gap:clamp(18px,3vw,34px);grid-template-columns:repeat(auto-fill,minmax(140px,1fr));}
 .face-card{display:flex;flex-direction:column;align-items:center;text-align:center;text-decoration:none;color:var(--ink);gap:8px;transition:transform .25s;}
 .face-card:hover,.face-card:focus-visible{transform:translateY(-4px);outline:none;}

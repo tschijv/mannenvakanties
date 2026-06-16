@@ -44,7 +44,14 @@
           <li class="year-row">
             <a class="year-row-main" href="/beheer/jaar/<%= y.id %>">
               <span class="year-row-title"><%= y.year %><% if (y.place) { %> <span class="muted">&middot; <%= y.place %></span><% } %></span>
-              <span class="year-row-count"><%= y.photo_count %> foto<%= y.photo_count === 1 ? '' : "'s" %></span>
+              <span class="year-row-meta">
+                <% if (y.lat != null && y.lng != null) { %>
+                  <span class="geo-badge has-geo" title="Coördinaten ingesteld">📍 op kaart</span>
+                <% } else { %>
+                  <span class="geo-badge no-geo" title="Nog geen coördinaten">⚠ geen coördinaten</span>
+                <% } %>
+                <span class="year-row-count"><%= y.photo_count %> foto<%= y.photo_count === 1 ? '' : "'s" %></span>
+              </span>
             </a>
             <a class="btn small" href="/beheer/jaar/<%= y.id %>">Foto's beheren &rarr;</a>
           </li>

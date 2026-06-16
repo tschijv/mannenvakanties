@@ -8,6 +8,28 @@
     <p>Teken met de muis (of vinger) een vak om een gezicht en koppel het aan een persoon. Bestaande gezichten staan genummerd in de foto.</p>
   </header>
 
+  <datalist id="namenlijst">
+    <% names.forEach(function(n){ %><option value="<%= n %>"></option><% }) %>
+  </datalist>
+
+  <section class="card">
+    <h2>Snel: een naam aan deze foto koppelen</h2>
+    <p class="muted small">Weet je wie erop staat maar wil je geen vak tekenen? Koppel de hele foto aan een persoon — die verschijnt dan op de Namen-pagina. (Een vak tekenen geeft een mooiere uitsnede.)</p>
+    <form method="post" action="/beheer/foto/<%= photo.id %>/gezicht" class="form row">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <input type="hidden" name="x" value="0"><input type="hidden" name="y" value="0">
+      <input type="hidden" name="w" value="1"><input type="hidden" name="h" value="1">
+      <label class="field grow"><span>Bestaande persoon</span>
+        <select name="person_id">
+          <option value="">— nieuwe persoon —</option>
+          <% persons.forEach(function(p){ %><option value="<%= p.id %>"><%= p.label %></option><% }) %>
+        </select>
+      </label>
+      <label class="field grow"><span>…of naam</span><input type="text" name="new_name" list="namenlijst" placeholder="bv. Kees" autocomplete="off"></label>
+      <button class="btn" type="submit">Naam aan foto koppelen</button>
+    </form>
+  </section>
+
   <section class="card">
     <div class="tag-stage" id="tagStage"
          data-rot="<%= photo.rotation || 0 %>"
@@ -35,7 +57,7 @@
             <% persons.forEach(function(p){ %><option value="<%= p.id %>"><%= p.label %></option><% }) %>
           </select>
         </label>
-        <label class="field grow"><span>…of naam (nieuw of overschrijven)</span><input type="text" name="new_name" placeholder="bv. Kees" autocomplete="off"></label>
+        <label class="field grow"><span>…of naam (nieuw of overschrijven)</span><input type="text" name="new_name" list="namenlijst" placeholder="bv. Kees" autocomplete="off"></label>
         <button class="btn" type="submit">Gezicht koppelen</button>
         <button class="btn ghost" type="button" id="addCancel">Annuleren</button>
       </div>
@@ -59,7 +81,7 @@
                   <% persons.forEach(function(p){ %><option value="<%= p.id %>"<%= p.id === f.person_id ? ' selected' : '' %>><%= p.label %></option><% }) %>
                 </select>
               </label>
-              <label class="field grow"><span>…of nieuwe naam</span><input type="text" name="new_name" placeholder="naam" autocomplete="off"></label>
+              <label class="field grow"><span>…of nieuwe naam</span><input type="text" name="new_name" list="namenlijst" placeholder="naam" autocomplete="off"></label>
               <button class="btn small" type="submit">Opslaan</button>
             </form>
             <form method="post" action="/beheer/gezicht/<%= f.id %>/verwijderen" onsubmit="return confirm('Dit gezicht verwijderen?');">

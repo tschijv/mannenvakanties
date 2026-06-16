@@ -10,6 +10,12 @@
     <% if (typeof untagged !== 'undefined' && untagged) { %>
       <p class="year-tools"><a class="btn" href="/beheer/gezichten"><%= untagged %> gevonden gezicht<%= untagged === 1 ? '' : 'en' %> nog te benoemen &rarr;</a></p>
     <% } %>
+    <form method="post" action="/beheer/persoon" class="names-add">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <input type="text" name="name" placeholder="Naam van een nieuwe persoon" autocomplete="off" aria-label="Naam nieuwe persoon">
+      <button class="btn ghost" type="submit">+ Persoon toevoegen</button>
+    </form>
+    <p class="names-add-hint">Een nieuwe persoon mag nog zonder foto's. Koppel daarna foto's via “Tag gezichten” op een foto.</p>
   </div>
 </header>
 
