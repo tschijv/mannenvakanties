@@ -353,7 +353,8 @@ app.get('/beheer/gezichten', requireLogin, (req, res) => {
     'FROM faces f JOIN photos p ON p.id = f.photo_id JOIN years y ON y.id = p.year_id ' +
     'WHERE f.person_id IS NULL AND p.deleted = 0 ORDER BY y.year ASC, p.id ASC, f.id ASC'
   ).all();
-  res.render('gezichten-review', { groups: clusterFaces(faces), total: faces.length, persons: personsForSelect() });
+  const names = db.prepare("SELECT name FROM persons WHERE name <> '' ORDER BY name COLLATE NOCASE ASC").all().map((r) => r.name);
+  res.render('gezichten-review', { groups: clusterFaces(faces), total: faces.length, persons: personsForSelect(), names });
 });
 
 // Een groep gezichten in één keer aan een persoon koppelen.

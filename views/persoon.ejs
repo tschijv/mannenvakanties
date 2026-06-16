@@ -66,7 +66,14 @@
                 </div>
                 <div class="caption"><%= p.caption || '· · ·' %></div>
               </button>
-              <% if (user) { %><a class="photo-tag-link" href="/beheer/foto/<%= p.photo_id %>/gezichten" title="Gezichten op deze foto">gezichten</a><% } %>
+              <% if (user) { %>
+                <a class="photo-tag-link" href="/beheer/foto/<%= p.photo_id %>/gezichten" title="Gezichten op deze foto">gezichten</a>
+                <form method="post" action="/beheer/gezicht/<%= p.id %>/verwijderen" class="photo-del-form" onsubmit="return confirm('Deze foto van deze persoon verwijderen?');">
+                  <input type="hidden" name="_csrf" value="<%= csrf %>">
+                  <input type="hidden" name="back" value="/persoon/<%= person.id %>">
+                  <button class="photo-del" type="submit" title="Verwijder van deze persoon" aria-label="Verwijder van deze persoon">✕</button>
+                </form>
+              <% } %>
             </div>
           <% }) %>
         </div>

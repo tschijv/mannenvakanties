@@ -12,6 +12,10 @@
     <section class="card"><p class="muted">Niets meer te controleren — alle gevonden gezichten zijn toegewezen. 🎉</p></section>
   <% } %>
 
+  <datalist id="namenlijst">
+    <% names.forEach(function(n){ %><option value="<%= n %>"></option><% }) %>
+  </datalist>
+
   <% groups.forEach(function(g, gi){ %>
     <section class="card review-group">
       <div class="review-faces">
@@ -38,7 +42,7 @@
             <% persons.forEach(function(p){ %><option value="<%= p.id %>"><%= p.label %></option><% }) %>
           </select>
         </label>
-        <label class="field grow"><span>…of naam</span><input type="text" name="new_name" placeholder="bv. Kees" autocomplete="off"></label>
+        <label class="field grow"><span>…of naam</span><input type="text" name="new_name" list="namenlijst" placeholder="bv. Kees" autocomplete="off"></label>
         <button class="btn" type="submit">Koppelen</button>
         <button class="btn ghost" type="submit" name="create_unnamed" value="1" title="Maak hier vast een naamloze persoon van; naam kan later">Naamloos</button>
       </form>
