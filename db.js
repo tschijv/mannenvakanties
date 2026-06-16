@@ -137,6 +137,9 @@ CREATE INDEX IF NOT EXISTS idx_faces_photo  ON faces (photo_id);
 CREATE INDEX IF NOT EXISTS idx_faces_person ON faces (person_id);
 `);
 
+/* Zelfgekozen omslag-gezicht per persoon (voor het Namenoverzicht); leeg = automatisch */
+ensureColumn('persons', 'cover_face_id', 'INTEGER');
+
 /* Video's (YouTube-links) per jaar */
 db.exec(`
 CREATE TABLE IF NOT EXISTS videos (

@@ -273,8 +273,17 @@ app.get('/recent', (req, res) => {
 /*  Ingang op naam: personen + gezichten (alleen voor leden)           */
 /* ------------------------------------------------------------------ */
 
-// Representatief gezicht (grootste vlak) van een persoon, met fotobron erbij.
+// Representatief gezicht van een persoon, met fotobron erbij.
+// Zelfgekozen omslag (cover_face_id) gaat voor; anders het grootste vlak.
 function personCover(personId) {
+  const person = db.prepare('SELECT cover_face_id FROM persons WHERE id = ?').get(personId);
+  if (person && person.cover_face_id) {
+    const chosen = db.prepare(
+      'SELECT f.*, p.src, p.rotation, p.oriented FROM faces f JOIN photos p ON p.id = f.photo_id ' +
+      'WHERE f.id = ? AND f.person_id = ? AND p.deleted = 0'
+    ).get(person.cover_face_id, personId);
+    if (chosen) return chosen;
+  }
   return db.prepare(
     'SELECT f.*, p.src, p.rotation, p.oriented FROM faces f JOIN photos p ON p.id = f.photo_id ' +
     'WHERE f.person_id = ? AND p.deleted = 0 ORDER BY (f.w * f.h) DESC, f.id ASC LIMIT 1'
@@ -471,6 +480,20 @@ app.post('/beheer/persoon/:id', requireLogin, (req, res) => {
   const name = (req.body.name || '').trim();
   db.prepare('UPDATE persons SET name = ? WHERE id = ?').run(name, person.id);
   addLog(actor(res), 'persoon #' + person.id + (name ? ' benoemd als "' + name + '"' : ' naam gewist'), 'content');
+  res.redirect('/persoon/' + person.id);
+});
+
+// Omslagfoto (representatief gezicht) van een persoon kiezen voor het Namenoverzicht.
+app.post('/beheer/persoon/:id/omslag', requireLogin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const person = db.prepare('SELECT * FROM persons WHERE id = ?').get(req.params.id);
+  if (!person) return res.redirect('/namen');
+  const faceId = Number(req.body.face_id) || null;
+  if (faceId) {
+    const ok = db.prepare('SELECT id FROM faces WHERE id = ? AND person_id = ?').get(faceId, person.id);
+    if (!ok) return res.redirect('/persoon/' + person.id);
+  }
+  db.prepare('UPDATE persons SET cover_face_id = ? WHERE id = ?').run(faceId, person.id);
   res.redirect('/persoon/' + person.id);
 });
 
