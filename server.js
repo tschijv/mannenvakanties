@@ -515,12 +515,13 @@ app.post('/beheer/foto/:id/gezicht', requireLogin, (req, res) => {
   if (!checkCsrf(req, res)) return;
   const photo = db.prepare('SELECT * FROM photos WHERE id = ? AND deleted = 0').get(req.params.id);
   if (!photo) return res.status(404).send('Foto niet gevonden');
+  const back = req.body.back || ('/beheer/foto/' + photo.id + '/gezichten');
   const f = (v) => parseFloat(String(v).replace(',', '.'));
   const c01 = (v) => Math.max(0, Math.min(1, v));
   let x = f(req.body.x), y = f(req.body.y), w = f(req.body.w), h = f(req.body.h);
   if (![x, y, w, h].every(Number.isFinite) || w <= 0 || h <= 0) {
     req.session.flash = { type: 'err', msg: 'Kon het gezichtsvak niet lezen.' };
-    return res.redirect('/beheer/foto/' + photo.id + '/gezichten');
+    return res.redirect(back);
   }
   x = c01(x); y = c01(y); w = c01(w); h = c01(h);
   const personId = resolvePerson(req, res, { allowCreate: true }) ||
@@ -528,7 +529,7 @@ app.post('/beheer/foto/:id/gezicht', requireLogin, (req, res) => {
   db.prepare('INSERT INTO faces (photo_id, person_id, x, y, w, h, source, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
     .run(photo.id, personId, x, y, w, h, 'handmatig', res.locals.user.id);
   addLog(actor(res), 'gezicht getagd op foto #' + photo.id, 'content');
-  res.redirect('/beheer/foto/' + photo.id + '/gezichten');
+  res.redirect(back);
 });
 
 // Gezicht aan een andere persoon koppelen (of losmaken).
@@ -741,7 +742,16 @@ app.get('/beheer/jaar/:id', requireLogin, (req, res) => {
   if (!year) { req.session.flash = { type: 'err', msg: 'Jaar niet gevonden.' }; return res.redirect('/beheer'); }
   year.photos = db.prepare('SELECT * FROM photos WHERE year_id = ? AND deleted = 0 ORDER BY sort ASC, id ASC').all(year.id);
   year.videos = db.prepare('SELECT * FROM videos WHERE year_id = ? ORDER BY sort ASC, id ASC').all(year.id);
-  res.render('beheer-jaar', { year });
+  // Namen (gekoppelde personen) per foto, voor het namen-blok onder elke foto.
+  const facesByPhoto = db.prepare(
+    'SELECT f.id AS face_id, f.photo_id, pe.id AS person_id, pe.name ' +
+    'FROM faces f JOIN persons pe ON pe.id = f.person_id ' +
+    'WHERE f.photo_id IN (SELECT id FROM photos WHERE year_id = ?) ORDER BY f.id ASC'
+  ).all(year.id);
+  const nameMap = {};
+  for (const r of facesByPhoto) (nameMap[r.photo_id] = nameMap[r.photo_id] || []).push(r);
+  year.photos.forEach((p) => { p.names = nameMap[p.id] || []; });
+  res.render('beheer-jaar', { year, names: namedPersonNames() });
 });
 
 /* Coördinaten opzoeken bij een plaatsnaam (OpenStreetMap Nominatim) */

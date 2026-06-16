@@ -73,6 +73,31 @@
                 <input type="text" name="caption" value="<%= p.caption %>" placeholder="Bijschrift…" maxlength="120">
                 <button class="linkbtn save" type="submit">Opslaan</button>
               </form>
+              <div class="names-block">
+                <% if (p.names.length) { %>
+                  <ul class="name-chips">
+                    <% p.names.forEach(function(nm){ %>
+                      <li class="name-chip">
+                        <a href="/persoon/<%= nm.person_id %>"><%= nm.name || 'naamloos' %></a>
+                        <form method="post" action="/beheer/gezicht/<%= nm.face_id %>/verwijderen" class="inline" onsubmit="return confirm('Naam van deze foto halen?');">
+                          <input type="hidden" name="_csrf" value="<%= csrf %>">
+                          <input type="hidden" name="back" value="/beheer/jaar/<%= year.id %>#foto-<%= p.id %>">
+                          <button class="chip-x" type="submit" title="Naam van deze foto halen" aria-label="Verwijderen">✕</button>
+                        </form>
+                      </li>
+                    <% }) %>
+                  </ul>
+                <% } %>
+                <form method="post" action="/beheer/foto/<%= p.id %>/gezicht" class="name-add">
+                  <input type="hidden" name="_csrf" value="<%= csrf %>">
+                  <input type="hidden" name="x" value="0"><input type="hidden" name="y" value="0">
+                  <input type="hidden" name="w" value="1"><input type="hidden" name="h" value="1">
+                  <input type="hidden" name="back" value="/beheer/jaar/<%= year.id %>#foto-<%= p.id %>">
+                  <input type="text" name="new_name" list="namenlijst" placeholder="+ naam wie erop staat" maxlength="80" required>
+                  <button class="linkbtn save" type="submit">Naam toevoegen</button>
+                </form>
+                <a class="name-tag-link" href="/beheer/foto/<%= p.id %>/gezichten">vak tekenen…</a>
+              </div>
               <form method="post" action="/beheer/foto/<%= p.id %>/verwijderen" class="del-form" onsubmit="return confirm('Deze foto verwijderen? Een beheerder kan hem nog herstellen.');">
                 <input type="hidden" name="_csrf" value="<%= csrf %>">
                 <button class="linkbtn danger" type="submit">Verwijderen</button>
@@ -149,6 +174,10 @@
       </details>
     <% } %>
   </section>
+
+  <datalist id="namenlijst">
+    <% names.forEach(function(n){ %><option value="<%= n %>"></option><% }) %>
+  </datalist>
 </main>
 <script src="/beheer.js?v=<%= typeof ASSET_VER !== 'undefined' ? ASSET_VER : '1' %>"></script>
 <%- include('partials/foot') %>

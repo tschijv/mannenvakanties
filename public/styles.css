@@ -461,6 +461,18 @@ a{color:var(--pen);}
 .linkbtn.danger{color:var(--stamp);}
 .small{font-size:.85em;}
 
+/* namen per foto op de beheer-jaarpagina */
+.names-block{display:flex;flex-direction:column;gap:5px;margin:2px 0 4px;}
+.name-chips{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:5px;}
+.name-chip{display:inline-flex;align-items:center;gap:4px;background:rgba(39,67,92,.12);border-radius:999px;padding:1px 4px 1px 9px;font-size:12px;}
+.name-chip a{color:var(--pen);text-decoration:none;}
+.name-chip .inline{margin:0;}
+.chip-x{border:none;background:none;color:var(--stamp);cursor:pointer;font-size:11px;line-height:1;padding:2px;}
+.name-add{display:flex;gap:6px;align-items:center;margin:0;}
+.name-add input[type=text]{flex:1;min-width:0;padding:5px 8px;border:1px solid var(--paper-edge,#cdbf9c);border-radius:5px;font:inherit;font-size:13px;}
+.name-tag-link{font-family:var(--meta);font-size:11px;color:var(--ink-soft);text-decoration:none;}
+.name-tag-link:hover{color:var(--gold);}
+
 /* begeleide benoem-modus */
 .benoem-progress{font-family:var(--meta);font-size:12px;color:var(--ink-soft);}
 .benoem-faces{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-bottom:22px;}
