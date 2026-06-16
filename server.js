@@ -269,6 +269,175 @@ app.get('/recent', (req, res) => {
   res.render('recent', { changes });
 });
 
+/* ------------------------------------------------------------------ */
+/*  Ingang op naam: personen + gezichten (alleen voor leden)           */
+/* ------------------------------------------------------------------ */
+
+// Representatief gezicht (grootste vlak) van een persoon, met fotobron erbij.
+function personCover(personId) {
+  return db.prepare(
+    'SELECT f.*, p.src, p.rotation, p.oriented FROM faces f JOIN photos p ON p.id = f.photo_id ' +
+    'WHERE f.person_id = ? AND p.deleted = 0 ORDER BY (f.w * f.h) DESC, f.id ASC LIMIT 1'
+  ).get(personId);
+}
+
+// Alle personen met aantal foto's en een coverfoto; naamlozen genummerd.
+function personsOverview() {
+  const persons = db.prepare(
+    "SELECT pe.*, " +
+    "(SELECT COUNT(*) FROM faces f JOIN photos p ON p.id = f.photo_id " +
+    " WHERE f.person_id = pe.id AND p.deleted = 0) AS face_count " +
+    "FROM persons pe ORDER BY (pe.name = '') ASC, pe.name COLLATE NOCASE ASC, pe.id ASC"
+  ).all();
+  let n = 0;
+  for (const pe of persons) {
+    pe.cover = personCover(pe.id);
+    if (!pe.name) pe.seq = ++n;
+  }
+  return persons;
+}
+
+// Personen voor een keuzelijst (gesorteerd, met naamloos-nummer).
+function personsForSelect() {
+  const persons = db.prepare(
+    "SELECT id, name FROM persons ORDER BY (name = '') ASC, name COLLATE NOCASE ASC, id ASC"
+  ).all();
+  let n = 0;
+  for (const pe of persons) pe.label = pe.name || ('Naamloos #' + (++n));
+  return persons;
+}
+
+app.get('/namen', requireLogin, (req, res) => {
+  res.render('namen', { persons: personsOverview() });
+});
+
+app.get('/persoon/:id', requireLogin, (req, res) => {
+  const person = db.prepare('SELECT * FROM persons WHERE id = ?').get(req.params.id);
+  if (!person) return res.redirect('/namen');
+  const faces = db.prepare(
+    'SELECT f.*, p.src, p.caption, p.rotation, p.oriented, p.id AS photo_id, ' +
+    '       y.id AS year_id, y.year, y.place ' +
+    'FROM faces f JOIN photos p ON p.id = f.photo_id JOIN years y ON y.id = p.year_id ' +
+    'WHERE f.person_id = ? AND p.deleted = 0 ' +
+    'ORDER BY y.year ASC, y.id ASC, p.sort ASC, p.id ASC'
+  ).all(person.id);
+  const byYear = [];
+  const map = {};
+  for (const f of faces) {
+    if (!map[f.year_id]) { map[f.year_id] = { year_id: f.year_id, year: f.year, place: f.place, items: [] }; byYear.push(map[f.year_id]); }
+    map[f.year_id].items.push(f);
+  }
+  person.cover = personCover(person.id);
+  // Andere personen (om mee samen te voegen)
+  const others = personsForSelect().filter((p) => p.id !== person.id);
+  res.render('persoon', { person, byYear, faceCount: faces.length, others });
+});
+
+// Taggen: foto groot tonen met de bestaande gezichten erover.
+app.get('/beheer/foto/:id/gezichten', requireLogin, (req, res) => {
+  const photo = db.prepare(
+    'SELECT p.*, y.id AS year_id, y.year FROM photos p JOIN years y ON y.id = p.year_id ' +
+    'WHERE p.id = ? AND p.deleted = 0'
+  ).get(req.params.id);
+  if (!photo) return res.redirect('/');
+  const faces = db.prepare(
+    'SELECT f.*, pe.name AS person_name FROM faces f LEFT JOIN persons pe ON pe.id = f.person_id ' +
+    'WHERE f.photo_id = ? ORDER BY f.id ASC'
+  ).all(photo.id);
+  res.render('foto-gezichten', { photo, faces, persons: personsForSelect() });
+});
+
+// Persoon (of nieuwe naam) bepalen uit het formulier; geeft persoon-id terug.
+function resolvePerson(req, res, { allowCreate } = { allowCreate: true }) {
+  let personId = req.body.person_id ? Number(req.body.person_id) : null;
+  const newName = (req.body.new_name || '').trim();
+  if (personId) {
+    if (newName) db.prepare('UPDATE persons SET name = ? WHERE id = ?').run(newName, personId);
+    return personId;
+  }
+  if (allowCreate && (newName || req.body.create_unnamed)) {
+    return Number(db.prepare('INSERT INTO persons (name, created_by) VALUES (?, ?)').run(newName, res.locals.user.id).lastInsertRowid);
+  }
+  return null;
+}
+
+// Gezicht toevoegen aan een foto (koppelt aan bestaande of nieuwe persoon).
+app.post('/beheer/foto/:id/gezicht', requireLogin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const photo = db.prepare('SELECT * FROM photos WHERE id = ? AND deleted = 0').get(req.params.id);
+  if (!photo) return res.status(404).send('Foto niet gevonden');
+  const f = (v) => parseFloat(String(v).replace(',', '.'));
+  const c01 = (v) => Math.max(0, Math.min(1, v));
+  let x = f(req.body.x), y = f(req.body.y), w = f(req.body.w), h = f(req.body.h);
+  if (![x, y, w, h].every(Number.isFinite) || w <= 0 || h <= 0) {
+    req.session.flash = { type: 'err', msg: 'Kon het gezichtsvak niet lezen.' };
+    return res.redirect('/beheer/foto/' + photo.id + '/gezichten');
+  }
+  x = c01(x); y = c01(y); w = c01(w); h = c01(h);
+  const personId = resolvePerson(req, res, { allowCreate: true }) ||
+    Number(db.prepare('INSERT INTO persons (name, created_by) VALUES (?, ?)').run('', res.locals.user.id).lastInsertRowid);
+  db.prepare('INSERT INTO faces (photo_id, person_id, x, y, w, h, source, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(photo.id, personId, x, y, w, h, 'handmatig', res.locals.user.id);
+  addLog(actor(res), 'gezicht getagd op foto #' + photo.id, 'content');
+  res.redirect('/beheer/foto/' + photo.id + '/gezichten');
+});
+
+// Gezicht aan een andere persoon koppelen (of losmaken).
+app.post('/beheer/gezicht/:id/persoon', requireLogin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const face = db.prepare('SELECT * FROM faces WHERE id = ?').get(req.params.id);
+  if (!face) return res.redirect('/namen');
+  const personId = resolvePerson(req, res, { allowCreate: true });
+  db.prepare('UPDATE faces SET person_id = ? WHERE id = ?').run(personId, face.id);
+  res.redirect(req.body.back || ('/beheer/foto/' + face.photo_id + '/gezichten'));
+});
+
+// Gezicht verwijderen.
+app.post('/beheer/gezicht/:id/verwijderen', requireLogin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const face = db.prepare('SELECT * FROM faces WHERE id = ?').get(req.params.id);
+  if (face) db.prepare('DELETE FROM faces WHERE id = ?').run(face.id);
+  res.redirect(req.body.back || (face ? ('/beheer/foto/' + face.photo_id + '/gezichten') : '/namen'));
+});
+
+// Persoon hernoemen.
+app.post('/beheer/persoon/:id', requireLogin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const person = db.prepare('SELECT * FROM persons WHERE id = ?').get(req.params.id);
+  if (!person) return res.redirect('/namen');
+  const name = (req.body.name || '').trim();
+  db.prepare('UPDATE persons SET name = ? WHERE id = ?').run(name, person.id);
+  addLog(actor(res), 'persoon #' + person.id + (name ? ' benoemd als "' + name + '"' : ' naam gewist'), 'content');
+  res.redirect('/persoon/' + person.id);
+});
+
+// Twee personen samenvoegen (gezichten van 'from' gaan naar 'into').
+app.post('/beheer/persoon/:id/samenvoegen', requireLogin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const from = db.prepare('SELECT * FROM persons WHERE id = ?').get(req.params.id);
+  const into = db.prepare('SELECT * FROM persons WHERE id = ?').get(Number(req.body.into));
+  if (!from || !into || from.id === into.id) return res.redirect('/persoon/' + req.params.id);
+  const tx = db.transaction(() => {
+    db.prepare('UPDATE faces SET person_id = ? WHERE person_id = ?').run(into.id, from.id);
+    if (!into.name && from.name) db.prepare('UPDATE persons SET name = ? WHERE id = ?').run(from.name, into.id);
+    db.prepare('DELETE FROM persons WHERE id = ?').run(from.id);
+  });
+  tx();
+  addLog(actor(res), 'persoon #' + from.id + ' samengevoegd met #' + into.id, 'content');
+  res.redirect('/persoon/' + into.id);
+});
+
+// Persoon verwijderen (alleen admin); gezichten blijven bestaan maar worden losgekoppeld.
+app.post('/beheer/persoon/:id/verwijderen', requireLogin, requireAdmin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const person = db.prepare('SELECT * FROM persons WHERE id = ?').get(req.params.id);
+  if (person) {
+    db.prepare('DELETE FROM persons WHERE id = ?').run(person.id); // faces.person_id -> NULL via FK
+    addLog(actor(res), 'persoon #' + person.id + ' verwijderd', 'beheer');
+  }
+  res.redirect('/namen');
+});
+
 app.get('/jaar/:id', (req, res) => {
   const year = db.prepare('SELECT * FROM years WHERE id = ?').get(req.params.id);
   if (!year) return res.redirect('/');

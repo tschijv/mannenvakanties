@@ -11,4 +11,10 @@
     <span class="entry-ic" aria-hidden="true">◉</span>
     <span class="entry-tx"><b>Kaart</b><small>waar het gebeurde</small></span>
   </a>
+  <% if (user) { %>
+  <a class="entry-card<%= (typeof active!=='undefined'&&active==='namen')?' is-current':'' %>" href="/namen">
+    <span class="entry-ic" aria-hidden="true">☻</span>
+    <span class="entry-tx"><b>Namen</b><small>wie is wie, door de jaren</small></span>
+  </a>
+  <% } %>
 </div>

@@ -1,0 +1,41 @@
+<%- include('partials/head', { title: 'Namen — Mannenvakanties' }) %>
+<%- include('partials/pubnav', { active: 'namen' }) %>
+
+<header class="year-hero paper-grain">
+  <div class="year-hero-inner">
+    <p class="year-hero-eyebrow"><a href="/">&larr; Tijdlijn</a></p>
+    <h1 class="year-hero-num">Wie is wie</h1>
+    <p class="year-hero-note">De mannen door de jaren heen. Klik op een gezicht voor alle foto's van die persoon. Nog naamloos? Vul de naam aan op de persoonspagina.</p>
+    <p class="year-hero-count"><%= persons.length %> <%= persons.length === 1 ? 'persoon' : 'personen' %></p>
+  </div>
+</header>
+
+<main class="names-wrap">
+  <% if (persons.length) { %>
+    <ul class="face-grid">
+      <% persons.forEach(function(pe){ %>
+        <li>
+          <a class="face-card<%= pe.name ? '' : ' is-unnamed' %>" href="/persoon/<%= pe.id %>">
+            <span class="face-thumb">
+              <% if (pe.cover) { %>
+                <%- include('partials/facecrop', { face: pe.cover }) %>
+              <% } else { %>
+                <span class="face-empty" aria-hidden="true">?</span>
+              <% } %>
+            </span>
+            <span class="face-name"><%= pe.name || ('Naamloos #' + pe.seq) %></span>
+            <span class="face-count"><%= pe.face_count %> foto<%= pe.face_count === 1 ? '' : "'s" %></span>
+          </a>
+        </li>
+      <% }) %>
+    </ul>
+  <% } else { %>
+    <p class="empty-note">Nog geen gezichten getagd. Open een foto in een jaar en kies <b>“Tag gezichten”</b> om te beginnen.</p>
+  <% } %>
+</main>
+
+<footer class="colophon">
+  <p class="mark">M&middot;V</p>
+  <p>Mannenvakanties — het album</p>
+</footer>
+<%- include('partials/foot') %>

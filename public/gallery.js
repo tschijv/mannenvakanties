@@ -9,6 +9,7 @@ const lbPrev = document.getElementById('lbPrev');
 const lbNext = document.getElementById('lbNext');
 const lbDownload = document.getElementById('lbDownload');
 const lbEdit = document.getElementById('lbEdit');
+const lbTag = document.getElementById('lbTag');
 const lbZoomIn = document.getElementById('lbZoomIn');
 const lbZoomOut = document.getElementById('lbZoomOut');
 
@@ -82,6 +83,10 @@ function show(i) {
   if (lbEdit) {
     if (it.id && it.yearId) { lbEdit.href = '/beheer/jaar/' + it.yearId + '#foto-' + it.id; lbEdit.style.display = ''; }
     else { lbEdit.style.display = 'none'; }
+  }
+  if (lbTag) {
+    if (it.id) { lbTag.href = '/beheer/foto/' + it.id + '/gezichten'; lbTag.style.display = ''; }
+    else { lbTag.style.display = 'none'; }
   }
   const many = items.length > 1;
   if (lbPrev) lbPrev.style.display = many ? '' : 'none';

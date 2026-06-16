@@ -1,0 +1,80 @@
+<%- include('partials/head', { title: 'Gezichten taggen — Mannenvakanties' }) %>
+<%- include('partials/topbar') %>
+
+<main class="beheer tagger">
+  <p class="beheer-foot"><a href="/jaar/<%= photo.year_id %>">&larr; Terug naar <%= photo.year %></a></p>
+  <header class="beheer-head">
+    <h1>Gezichten taggen</h1>
+    <p>Teken met de muis (of vinger) een vak om een gezicht en koppel het aan een persoon. Bestaande gezichten staan genummerd in de foto.</p>
+  </header>
+
+  <section class="card">
+    <div class="tag-stage" id="tagStage"
+         data-rot="<%= photo.rotation || 0 %>"
+         data-photo="<%= photo.id %>">
+      <img id="tagImg" src="<%= photo.src %>" alt="<%= photo.caption || 'Foto' %>" draggable="false">
+      <div class="tag-overlay" id="tagOverlay">
+        <% faces.forEach(function(f, i){ %>
+          <div class="facebox" style="left:<%= (f.x*100).toFixed(2) %>%;top:<%= (f.y*100).toFixed(2) %>%;width:<%= (f.w*100).toFixed(2) %>%;height:<%= (f.h*100).toFixed(2) %>%;">
+            <span class="facebox-tag">#<%= i+1 %><%= f.person_name ? (' · ' + f.person_name) : '' %></span>
+          </div>
+        <% }) %>
+        <div class="facebox is-draft" id="tagDraft" hidden><span class="facebox-tag">nieuw</span></div>
+      </div>
+    </div>
+    <p class="muted small">Tip: teken het vak ruim om het hoofd. De uitsnede wordt automatisch vierkant getoond.</p>
+
+    <form method="post" action="/beheer/foto/<%= photo.id %>/gezicht" class="tag-addform" id="tagAddForm" hidden>
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <input type="hidden" name="x" id="fx"><input type="hidden" name="y" id="fy">
+      <input type="hidden" name="w" id="fw"><input type="hidden" name="h" id="fh">
+      <div class="form row">
+        <label class="field grow"><span>Bestaande persoon</span>
+          <select name="person_id" id="addPerson">
+            <option value="">— nieuwe persoon —</option>
+            <% persons.forEach(function(p){ %><option value="<%= p.id %>"><%= p.label %></option><% }) %>
+          </select>
+        </label>
+        <label class="field grow"><span>…of naam (nieuw of overschrijven)</span><input type="text" name="new_name" placeholder="bv. Kees" autocomplete="off"></label>
+        <button class="btn" type="submit">Gezicht koppelen</button>
+        <button class="btn ghost" type="button" id="addCancel">Annuleren</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Gezichten op deze foto <span class="muted">(<%= faces.length %>)</span></h2>
+    <% if (faces.length) { %>
+      <ul class="face-list">
+        <% faces.forEach(function(f, i){ %>
+          <li class="face-list-row">
+            <span class="face-thumb sm"><%- include('partials/facecrop', { face: { x:f.x, y:f.y, w:f.w, h:f.h, src: photo.src } }) %></span>
+            <span class="face-list-no">#<%= i+1 %></span>
+            <form method="post" action="/beheer/gezicht/<%= f.id %>/persoon" class="form row grow">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <input type="hidden" name="back" value="/beheer/foto/<%= photo.id %>/gezichten">
+              <label class="field grow"><span>Persoon</span>
+                <select name="person_id">
+                  <option value="">— losgekoppeld —</option>
+                  <% persons.forEach(function(p){ %><option value="<%= p.id %>"<%= p.id === f.person_id ? ' selected' : '' %>><%= p.label %></option><% }) %>
+                </select>
+              </label>
+              <label class="field grow"><span>…of nieuwe naam</span><input type="text" name="new_name" placeholder="naam" autocomplete="off"></label>
+              <button class="btn small" type="submit">Opslaan</button>
+            </form>
+            <form method="post" action="/beheer/gezicht/<%= f.id %>/verwijderen" onsubmit="return confirm('Dit gezicht verwijderen?');">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <input type="hidden" name="back" value="/beheer/foto/<%= photo.id %>/gezichten">
+              <button class="linkbtn danger" type="submit">verwijderen</button>
+            </form>
+          </li>
+        <% }) %>
+      </ul>
+    <% } else { %>
+      <p class="muted">Nog geen gezichten op deze foto.</p>
+    <% } %>
+  </section>
+</main>
+
+<script src="/gezichten.js?v=<%= typeof ASSET_VER !== 'undefined' ? ASSET_VER : '1' %>"></script>
+<%- include('partials/foot') %>

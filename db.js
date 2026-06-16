@@ -104,6 +104,39 @@ CREATE INDEX IF NOT EXISTS idx_visits_created ON visits (created_at);
 CREATE INDEX IF NOT EXISTS idx_visits_year    ON visits (year_id);
 `);
 
+/* Personen + gezichten (ingang "op naam").
+   Een 'face' is een vak (genormaliseerd 0–1) in een foto; het mag aan een
+   persoon gekoppeld zijn of nog naamloos zijn. descriptor is gereserveerd
+   voor latere automatische herkenning (fase 2). */
+db.exec(`
+CREATE TABLE IF NOT EXISTS persons (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  name       TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  created_by INTEGER,
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS faces (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  photo_id   INTEGER NOT NULL,
+  person_id  INTEGER,
+  x          REAL NOT NULL,
+  y          REAL NOT NULL,
+  w          REAL NOT NULL,
+  h          REAL NOT NULL,
+  source     TEXT NOT NULL DEFAULT 'handmatig',
+  descriptor TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  created_by INTEGER,
+  FOREIGN KEY (photo_id)   REFERENCES photos(id)  ON DELETE CASCADE,
+  FOREIGN KEY (person_id)  REFERENCES persons(id) ON DELETE SET NULL,
+  FOREIGN KEY (created_by) REFERENCES users(id)   ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS idx_faces_photo  ON faces (photo_id);
+CREATE INDEX IF NOT EXISTS idx_faces_person ON faces (person_id);
+`);
+
 /* Video's (YouTube-links) per jaar */
 db.exec(`
 CREATE TABLE IF NOT EXISTS videos (

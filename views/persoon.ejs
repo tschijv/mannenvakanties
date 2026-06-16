@@ -1,0 +1,103 @@
+<%- include('partials/head', { title: (person.name || 'Naamloos') + ' — Mannenvakanties' }) %>
+<%- include('partials/pubnav', { active: 'namen' }) %>
+
+<header class="year-hero paper-grain">
+  <div class="year-hero-inner person-hero">
+    <p class="year-hero-eyebrow"><a href="/namen">&larr; Namen</a></p>
+    <div class="person-head">
+      <span class="face-thumb person-cover">
+        <% if (person.cover) { %><%- include('partials/facecrop', { face: person.cover }) %><% } else { %><span class="face-empty" aria-hidden="true">?</span><% } %>
+      </span>
+      <div class="person-head-tx">
+        <h1 class="year-hero-num person-name"><%= person.name || 'Naamloos' %></h1>
+        <p class="year-hero-count"><%= faceCount %> foto<%= faceCount === 1 ? '' : "'s" %></p>
+      </div>
+    </div>
+
+    <% if (user) { %>
+      <details class="person-tools">
+        <summary>Naam &amp; beheer</summary>
+        <div class="person-tools-body">
+          <form method="post" action="/beheer/persoon/<%= person.id %>" class="form row">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <label class="field grow"><span>Naam</span><input type="text" name="name" value="<%= person.name %>" placeholder="Vul de naam in" autocomplete="off"></label>
+            <button class="btn" type="submit">Naam opslaan</button>
+          </form>
+
+          <% if (others.length) { %>
+            <form method="post" action="/beheer/persoon/<%= person.id %>/samenvoegen" class="form row" onsubmit="return confirm('Deze persoon samenvoegen met de gekozen persoon? De gezichten gaan over en deze kaart verdwijnt.');">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <label class="field grow"><span>Samenvoegen met</span>
+                <select name="into">
+                  <% others.forEach(function(o){ %><option value="<%= o.id %>"><%= o.label %></option><% }) %>
+                </select>
+              </label>
+              <button class="btn ghost" type="submit">Samenvoegen</button>
+            </form>
+          <% } %>
+
+          <% if (user.role === 'admin') { %>
+            <form method="post" action="/beheer/persoon/<%= person.id %>/verwijderen" onsubmit="return confirm('Deze persoon verwijderen? De gezichten blijven op de foto\'s staan maar worden losgekoppeld.');">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <button class="linkbtn danger" type="submit">Persoon verwijderen</button>
+            </form>
+          <% } %>
+        </div>
+      </details>
+    <% } %>
+  </div>
+</header>
+
+<main id="album">
+  <% if (byYear.length) { %>
+    <% byYear.forEach(function(g){ %>
+      <section class="year paper-grain">
+        <h2 class="person-year"><a href="/jaar/<%= g.year_id %>"><%= g.year %></a><% if (g.place) { %> <span class="muted">· <%= g.place %></span><% } %></h2>
+        <div class="grid">
+          <% g.items.forEach(function(p){ var rot = p.rotation || 0; var cs = (rot % 180 === 0) ? 1 : ((rot % 90 === 0) ? 1.34 : 1.66); %>
+            <div class="tl-photo">
+              <button class="mount has-photo" type="button"
+                      data-src="<%= p.src %>" data-cap="<%= p.caption %>" data-id="<%= p.photo_id %>" data-year-id="<%= g.year_id %>" data-rot="<%= rot %>" data-oriented="<%= p.oriented ? 1 : 0 %>"
+                      aria-label="Vergroot foto<%= p.caption ? ': ' + p.caption : '' %>">
+                <div class="frame">
+                  <span class="corner tl"></span><span class="corner tr"></span>
+                  <span class="corner bl"></span><span class="corner br"></span>
+                  <img loading="lazy" decoding="async" src="<%= p.src %>" alt="<%= p.caption || 'Foto' %>" class="<%= p.oriented ? 'exif-fixed' : '' %>" style="transform:rotate(<%= rot %>deg) scale(<%= cs %>);">
+                </div>
+                <div class="caption"><%= p.caption || '· · ·' %></div>
+              </button>
+              <% if (user) { %><a class="photo-tag-link" href="/beheer/foto/<%= p.photo_id %>/gezichten" title="Gezichten op deze foto">gezichten</a><% } %>
+            </div>
+          <% }) %>
+        </div>
+      </section>
+    <% }) %>
+  <% } else { %>
+    <p class="empty-note">Nog geen foto's aan deze persoon gekoppeld.</p>
+  <% } %>
+
+  <p class="year-back"><a href="/namen">&larr; Terug naar de namen</a></p>
+</main>
+
+<footer class="colophon">
+  <p class="mark">M&middot;V</p>
+  <p>Mannenvakanties — het album</p>
+</footer>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Foto vergroot">
+  <button class="close" id="lbClose" aria-label="Sluiten">✕</button>
+  <button class="lb-nav lb-prev" id="lbPrev" aria-label="Vorige foto">&#8249;</button>
+  <button class="lb-nav lb-next" id="lbNext" aria-label="Volgende foto">&#8250;</button>
+  <div class="lb-zoom">
+    <button class="lb-zoom-btn" id="lbZoomOut" type="button" aria-label="Uitzoomen">&minus;</button>
+    <button class="lb-zoom-btn" id="lbZoomIn" type="button" aria-label="Inzoomen">+</button>
+  </div>
+  <figure>
+    <img id="lbImg" src="" alt="">
+    <figcaption id="lbCap"></figcaption>
+  </figure>
+  <% if (user) { %><a class="lb-edit" id="lbTag" href="#">Tag gezichten</a> <a class="lb-edit" id="lbEdit" href="#">Bewerk foto</a> <a class="lb-download" id="lbDownload" href="#" download>Download foto</a><% } %>
+</div>
+
+<script src="/gallery.js?v=<%= typeof ASSET_VER !== 'undefined' ? ASSET_VER : '1' %>"></script>
+<%- include('partials/foot') %>

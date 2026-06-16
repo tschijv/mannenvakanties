@@ -399,3 +399,48 @@ a{color:var(--pen);}
 /* Prullenbak: bovenbalk met 'alles legen' */
 .trash-top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:10px;}
 .trash-top .thumbs-hint{margin:0;}
+
+/* ---------- NAMEN / WIE IS WIE ---------- */
+.names-wrap{max-width:1100px;margin:0 auto;padding:clamp(28px,5vw,64px) clamp(16px,5vw,40px) clamp(56px,9vw,110px);}
+.face-grid{list-style:none;margin:0;padding:0;display:grid;gap:clamp(18px,3vw,34px);grid-template-columns:repeat(auto-fill,minmax(140px,1fr));}
+.face-card{display:flex;flex-direction:column;align-items:center;text-align:center;text-decoration:none;color:var(--ink);gap:8px;transition:transform .25s;}
+.face-card:hover,.face-card:focus-visible{transform:translateY(-4px);outline:none;}
+.face-thumb{position:relative;width:100%;aspect-ratio:1;overflow:hidden;border-radius:50%;background:var(--paper-deep);border:1px solid rgba(40,28,18,.12);box-shadow:0 6px 16px var(--shadow);}
+.face-img{width:100%;height:100%;object-fit:cover;display:block;}
+.face-empty{display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-family:var(--display);font-size:2.4em;color:var(--ink-faint);}
+.face-name{font-weight:700;font-size:1.05em;line-height:1.15;}
+.face-card.is-unnamed .face-name{font-style:italic;font-weight:500;color:var(--ink-soft);}
+.face-count{font-family:var(--meta);font-size:11px;letter-spacing:.08em;color:var(--ink-faint);}
+
+/* persoonspagina */
+.person-hero{max-width:1000px;}
+.person-head{display:flex;align-items:center;gap:clamp(16px,3vw,28px);margin-top:8px;}
+.person-cover{width:clamp(84px,16vw,140px);flex:0 0 auto;border-radius:50%;}
+.person-head-tx{min-width:0;}
+.person-name{margin:0;}
+.person-tools{margin-top:20px;border-top:1px solid var(--paper-edge);padding-top:14px;}
+.person-tools>summary{cursor:pointer;font-family:var(--meta);font-size:12px;letter-spacing:.08em;color:var(--ink-soft);}
+.person-tools-body{display:flex;flex-direction:column;gap:14px;margin-top:14px;max-width:640px;}
+.person-year{font-size:clamp(22px,4vw,34px);margin:0 0 18px;color:var(--ink);}
+.person-year a{text-decoration:none;color:inherit;}
+.person-year a:hover{color:var(--gold);}
+.tl-photo{position:relative;}
+.photo-tag-link{position:absolute;top:6px;right:6px;z-index:2;background:rgba(36,26,19,.82);color:var(--gold-soft);font-family:var(--meta);font-size:10px;letter-spacing:.06em;text-decoration:none;padding:3px 7px;border-radius:3px;opacity:0;transition:opacity .2s;}
+.tl-photo:hover .photo-tag-link,.photo-tag-link:focus-visible{opacity:1;}
+
+/* ---------- GEZICHTEN TAGGEN ---------- */
+.tagger .tag-stage{position:relative;display:inline-block;max-width:100%;line-height:0;touch-action:none;cursor:crosshair;border:1px solid var(--paper-edge);background:#000;}
+.tagger #tagImg{display:block;max-width:100%;height:auto;pointer-events:none;-webkit-user-select:none;user-select:none;}
+.tag-overlay{position:absolute;inset:0;pointer-events:none;}
+.facebox{position:absolute;border:2px solid var(--gold-soft);box-shadow:0 0 0 1px rgba(0,0,0,.5),0 0 0 9999px rgba(0,0,0,0);border-radius:3px;}
+.facebox-tag{position:absolute;left:-1px;top:-20px;background:var(--gold-soft);color:var(--leather);font-family:var(--meta);font-size:10px;letter-spacing:.04em;padding:1px 6px;border-radius:2px;white-space:nowrap;line-height:1.4;}
+.facebox.is-draft{border-style:dashed;border-color:#fff;}
+.facebox.is-draft .facebox-tag{background:#fff;color:var(--ink);}
+.tag-addform{margin-top:16px;}
+.face-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px;}
+.face-list-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-bottom:1px dashed var(--paper-edge);padding-bottom:12px;}
+.face-thumb.sm{width:54px;height:54px;flex:0 0 auto;border-radius:8px;}
+.face-list-no{font-family:var(--meta);font-size:12px;color:var(--ink-soft);min-width:2em;}
+.face-list-row .form.row{flex:1 1 320px;align-items:flex-end;}
+.linkbtn.danger{color:var(--stamp);}
+.small{font-size:.85em;}

@@ -1,0 +1,9 @@
+<%
+  // Toont een vierkante uitsnede rond het gezicht uit de originele foto.
+  // Verwacht in de ouder een vierkante, overflow:hidden container (.face-thumb).
+  var _cx = (face.x + face.w / 2), _cy = (face.y + face.h / 2);
+  var _z  = Math.max(1, Math.min(3.4, 0.92 / Math.max(face.w || 0.001, face.h || 0.001)));
+  var _px = (Math.max(0, Math.min(1, _cx)) * 100).toFixed(2);
+  var _py = (Math.max(0, Math.min(1, _cy)) * 100).toFixed(2);
+%><img class="face-img" loading="lazy" decoding="async" src="<%= face.src %>" alt=""
+   style="object-position:<%= _px %>% <%= _py %>%;transform-origin:<%= _px %>% <%= _py %>%;transform:scale(<%= _z.toFixed(3) %>);">

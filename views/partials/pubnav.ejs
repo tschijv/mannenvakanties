@@ -5,6 +5,7 @@
     <a href="/groepsfotos" class="pubnav-entry<%= (typeof active !== 'undefined' && active === 'groep') ? ' is-active' : '' %>">Groepsfoto's</a>
     <a href="/kaart" class="pubnav-entry<%= (typeof active !== 'undefined' && active === 'kaart') ? ' is-active' : '' %>">Kaart</a>
     <a href="/recent" class="pubnav-entry<%= (typeof active !== 'undefined' && active === 'recent') ? ' is-active' : '' %>">Recent</a>
+    <% if (user) { %><a href="/namen" class="pubnav-entry<%= (typeof active !== 'undefined' && active === 'namen') ? ' is-active' : '' %>">Namen</a><% } %>
   </div>
   <div class="pubnav-account">
     <% if (user) { %>
