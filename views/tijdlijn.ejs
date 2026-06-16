@@ -6,6 +6,9 @@
     <p class="eyebrow">Een gedeeld fotoalbum</p>
     <h1>Mannen&shy;vakanties</h1>
     <p class="tagline">Van een weekendje weg tot een jaarlijkse traditie — jaar voor jaar.</p>
+    <% if (years.length) { %>
+      <p class="cover-count"><%= years.length %> vastgelegde mannenvakantie<%= years.length === 1 ? '' : 's' %></p>
+    <% } %>
     <%- include('partials/entries', { active: 'tijdlijn' }) %>
   </div>
 </header>

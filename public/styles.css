@@ -27,6 +27,7 @@ a{color:var(--pen);}
 .cover .eyebrow{font-family:var(--meta);letter-spacing:.42em;text-transform:uppercase;font-size:11px;color:var(--gold-soft);margin:0 0 22px;padding-left:.42em;}
 .cover h1{font-weight:900;font-size:clamp(44px,11vw,118px);line-height:.92;margin:0;color:var(--gold-soft);text-shadow:0 1px 0 rgba(0,0,0,.5),0 2px 1px rgba(0,0,0,.3);letter-spacing:-.01em;}
 .cover .tagline{font-style:italic;font-weight:500;font-size:clamp(16px,2.4vw,22px);color:rgba(231,220,196,.78);margin:26px auto 0;max-width:34ch;line-height:1.5;}
+.cover .cover-count{font-family:var(--meta);letter-spacing:.24em;text-transform:uppercase;font-size:12px;color:var(--gold-soft);margin:22px 0 0;padding-left:.24em;}
 .cover .label{margin-top:38px;display:inline-block;font-family:var(--meta);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#3a2a1c;background:linear-gradient(180deg,#e9dcbe,#d8c69e);padding:9px 18px;border-radius:2px;box-shadow:0 2px 6px rgba(0,0,0,.4);transform:rotate(-1.6deg);}
 .scroll-cue{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);z-index:1;color:var(--gold-soft);opacity:.7;font-family:var(--meta);font-size:10px;letter-spacing:.3em;text-transform:uppercase;display:flex;flex-direction:column;align-items:center;gap:8px;}
 .scroll-cue span{display:block;width:1px;height:34px;background:linear-gradient(var(--gold-soft),transparent);animation:cue 2.4s ease-in-out infinite;}
