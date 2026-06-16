@@ -432,9 +432,9 @@ a{color:var(--pen);}
 .person-year a{text-decoration:none;color:inherit;}
 .person-year a:hover{color:var(--gold);}
 .tl-photo{position:relative;}
-.photo-tag-link{position:absolute;top:6px;right:6px;z-index:2;background:rgba(36,26,19,.82);color:var(--gold-soft);font-family:var(--meta);font-size:10px;letter-spacing:.06em;text-decoration:none;padding:3px 7px;border-radius:3px;opacity:0;transition:opacity .2s;}
+.photo-tag-link{position:absolute;top:6px;right:6px;z-index:6;background:rgba(36,26,19,.82);color:var(--gold-soft);font-family:var(--meta);font-size:10px;letter-spacing:.06em;text-decoration:none;padding:3px 7px;border-radius:3px;opacity:0;transition:opacity .2s;}
 .tl-photo:hover .photo-tag-link,.photo-tag-link:focus-visible{opacity:1;}
-.photo-actions{position:absolute;top:6px;left:6px;z-index:2;display:flex;gap:6px;}
+.photo-actions{position:absolute;top:6px;left:6px;z-index:6;display:flex;gap:6px;}
 .photo-actions form{margin:0;}
 .photo-act{width:26px;height:26px;border-radius:50%;border:none;background:rgba(36,26,19,.82);color:#fff;font-size:13px;line-height:1;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.45);padding:0;}
 .photo-act.danger{background:var(--stamp);}
