@@ -87,6 +87,23 @@ CREATE TABLE IF NOT EXISTS logs (
 `);
 ensureColumn('logs', 'kind', "TEXT NOT NULL DEFAULT 'content'");
 
+/* Bezoekcijfers: één regel per paginaweergave.
+   Privacyvriendelijk: geen IP-adres, alleen een anonieme bezoeker-sleutel
+   (lichte first-party cookie) om unieke bezoekers te kunnen tellen. */
+db.exec(`
+CREATE TABLE IF NOT EXISTS visits (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  path       TEXT NOT NULL,
+  year_id    INTEGER,
+  username   TEXT,
+  visitor    TEXT,
+  FOREIGN KEY (year_id) REFERENCES years(id) ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS idx_visits_created ON visits (created_at);
+CREATE INDEX IF NOT EXISTS idx_visits_year    ON visits (year_id);
+`);
+
 /* Video's (YouTube-links) per jaar */
 db.exec(`
 CREATE TABLE IF NOT EXISTS videos (

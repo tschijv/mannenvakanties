@@ -82,6 +82,44 @@ app.use((req, res, next) => {
   next();
 });
 
+/* ------------------------------------------------------------------ */
+/*  Bezoekcijfers: leg paginaweergaves vast (geen IP, geen tracking)   */
+/* ------------------------------------------------------------------ */
+// Alleen echte pagina's tellen — geen assets, beheeracties, downloads of in-/uitloggen.
+const VISIT_SKIP = /^\/(uploads|beheer|download|inloggen|aanmelden|uitloggen|favicon|robots|styles|gallery|kaart\.js|beheer\.js)/;
+const BOT_UA = /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|preview|monitor|curl|wget|python-requests|headless/i;
+
+function readCookie(req, name) {
+  const raw = req.headers.cookie;
+  if (!raw) return null;
+  const m = raw.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]+)'));
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+const insVisit = db.prepare('INSERT INTO visits (path, year_id, username, visitor) VALUES (?, ?, ?, ?)');
+app.use((req, res, next) => {
+  try {
+    if (req.method === 'GET' && !VISIT_SKIP.test(req.path) &&
+        (req.headers.accept || '').includes('text/html') &&
+        !BOT_UA.test(req.headers['user-agent'] || '')) {
+      // anonieme bezoeker-sleutel via lichte first-party cookie (geen persoonsgegevens)
+      let vid = readCookie(req, 'mv_vid');
+      if (!vid) {
+        vid = crypto.randomBytes(8).toString('hex');
+        res.cookie('mv_vid', vid, {
+          httpOnly: true, sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: 1000 * 60 * 60 * 24 * 365
+        });
+      }
+      const ym = req.path.match(/^\/jaar\/(\d+)/);
+      const username = (res.locals.user && res.locals.user.username) || null;
+      insVisit.run(req.path, ym ? Number(ym[1]) : null, username, vid);
+    }
+  } catch (e) { /* tellen mag nooit een pagina blokkeren */ }
+  next();
+});
+
 function checkCsrf(req, res) {
   const token = (req.body && req.body._csrf) || req.headers['x-csrf-token'];
   if (token !== req.session.csrf) {
@@ -697,6 +735,43 @@ app.get('/beheer/leden', requireLogin, requireAdmin, (req, res) => {
 app.get('/beheer/logboek', requireLogin, requireAdmin, (req, res) => {
   const logs = db.prepare('SELECT created_at, username, event FROM logs ORDER BY id DESC LIMIT 300').all();
   res.render('logboek', { logs });
+});
+
+/* Bezoekcijfers (alleen admin): hoeveel weergaves, unieke bezoekers, drukste jaren */
+app.get('/beheer/statistieken', requireLogin, requireAdmin, (req, res) => {
+  const one = (sql, ...p) => db.prepare(sql).get(...p);
+
+  const totals = {
+    views:    one("SELECT COUNT(*) AS n FROM visits").n,
+    visitors: one("SELECT COUNT(DISTINCT visitor) AS n FROM visits").n,
+    today:    one("SELECT COUNT(*) AS n FROM visits WHERE date(created_at) = date('now')").n,
+    week:     one("SELECT COUNT(*) AS n FROM visits WHERE created_at >= datetime('now','-7 days')").n,
+    month:    one("SELECT COUNT(*) AS n FROM visits WHERE created_at >= datetime('now','-30 days')").n,
+    members:  one("SELECT COUNT(*) AS n FROM visits WHERE username IS NOT NULL").n,
+  };
+  totals.guests = totals.views - totals.members;
+
+  // Per dag, laatste 30 dagen (alleen dagen met bezoek; view vult gaten op).
+  const perDay = db.prepare(
+    "SELECT date(created_at) AS day, COUNT(*) AS views, COUNT(DISTINCT visitor) AS visitors " +
+    "FROM visits WHERE created_at >= datetime('now','-29 days') " +
+    "GROUP BY day ORDER BY day ASC"
+  ).all();
+
+  // Drukste jaren (op jaar-pagina's).
+  const topYears = db.prepare(
+    "SELECT y.id, y.year, y.place, COUNT(*) AS views, COUNT(DISTINCT v.visitor) AS visitors " +
+    "FROM visits v JOIN years y ON y.id = v.year_id " +
+    "GROUP BY v.year_id ORDER BY views DESC, y.year ASC LIMIT 20"
+  ).all();
+
+  // Drukste pagina's (vaste pagina's, geen jaar-detail).
+  const topPages = db.prepare(
+    "SELECT path, COUNT(*) AS views FROM visits WHERE year_id IS NULL " +
+    "GROUP BY path ORDER BY views DESC LIMIT 12"
+  ).all();
+
+  res.render('statistieken', { totals, perDay, topYears, topPages });
 });
 
 app.post('/beheer/leden/:id/rol', requireLogin, requireAdmin, (req, res) => {

@@ -1,0 +1,100 @@
+<%- include('partials/head', { title: 'Statistieken — Beheer' }) %>
+<%- include('partials/topbar') %>
+
+<main class="beheer">
+  <p class="beheer-foot"><a href="/beheer">&larr; Terug naar beheer</a></p>
+  <header class="beheer-head">
+    <h1>Statistieken</h1>
+    <p>Hoeveel het album wordt bekeken. We bewaren geen IP-adressen — unieke bezoekers
+       worden anoniem geteld via een eenvoudige cookie.</p>
+  </header>
+
+  <section class="card">
+    <div class="stat-grid">
+      <div class="stat"><span class="stat-num"><%= totals.today %></span><span class="stat-label">vandaag</span></div>
+      <div class="stat"><span class="stat-num"><%= totals.week %></span><span class="stat-label">laatste 7 dagen</span></div>
+      <div class="stat"><span class="stat-num"><%= totals.month %></span><span class="stat-label">laatste 30 dagen</span></div>
+      <div class="stat"><span class="stat-num"><%= totals.views %></span><span class="stat-label">weergaves totaal</span></div>
+      <div class="stat"><span class="stat-num"><%= totals.visitors %></span><span class="stat-label">unieke bezoekers</span></div>
+      <div class="stat"><span class="stat-num"><%= totals.members %><span class="muted"> / <%= totals.guests %></span></span><span class="stat-label">leden / gasten</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Per dag <span class="muted">(laatste 30 dagen)</span></h2>
+    <% if (perDay.length) { %>
+      <% var maxDay = perDay.reduce(function (m, d) { return Math.max(m, d.views); }, 1); %>
+      <ul class="bars">
+        <% perDay.slice().reverse().forEach(function (d) { %>
+          <li class="bar-row">
+            <span class="bar-day" data-utc="<%= d.day %>"><%= d.day %></span>
+            <span class="bar-track"><span class="bar-fill" style="width: <%= Math.round(d.views / maxDay * 100) %>%"></span></span>
+            <span class="bar-val"><%= d.views %> <span class="muted">(<%= d.visitors %>)</span></span>
+          </li>
+        <% }) %>
+      </ul>
+      <p class="muted small">Per dag: weergaves, tussen haakjes het aantal unieke bezoekers.</p>
+    <% } else { %>
+      <p class="muted">Nog geen bezoeken geteld.</p>
+    <% } %>
+  </section>
+
+  <section class="card">
+    <h2>Drukste jaren</h2>
+    <% if (topYears.length) { %>
+      <table class="leden-table">
+        <thead><tr><th>Jaar</th><th>Weergaves</th><th>Unieke bezoekers</th></tr></thead>
+        <tbody>
+          <% topYears.forEach(function (y) { %>
+            <tr>
+              <td><a href="/jaar/<%= y.id %>"><%= y.year %></a><% if (y.place) { %> <span class="muted">&middot; <%= y.place %></span><% } %></td>
+              <td><%= y.views %></td>
+              <td><%= y.visitors %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } else { %>
+      <p class="muted">Nog geen jaar-pagina's bekeken.</p>
+    <% } %>
+  </section>
+
+  <section class="card">
+    <h2>Drukste pagina's</h2>
+    <% if (topPages.length) { %>
+      <table class="leden-table">
+        <thead><tr><th>Pagina</th><th>Weergaves</th></tr></thead>
+        <tbody>
+          <% topPages.forEach(function (p) { %>
+            <tr><td><code><%= p.path %></code></td><td><%= p.views %></td></tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } else { %>
+      <p class="muted">Nog geen pagina's bekeken.</p>
+    <% } %>
+  </section>
+</main>
+
+<style>
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; }
+  .stat { display: flex; flex-direction: column; gap: .15rem; }
+  .stat-num { font-size: 1.9rem; font-weight: 700; line-height: 1; }
+  .stat-label { font-size: .85rem; opacity: .7; }
+  .bars { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .35rem; }
+  .bar-row { display: grid; grid-template-columns: 7.5rem 1fr 5rem; align-items: center; gap: .6rem; font-size: .9rem; }
+  .bar-track { background: rgba(127,127,127,.18); border-radius: 999px; height: .7rem; overflow: hidden; }
+  .bar-fill { display: block; height: 100%; background: currentColor; opacity: .55; border-radius: 999px; }
+  .bar-val { text-align: right; font-variant-numeric: tabular-nums; }
+  .small { font-size: .85rem; }
+  @media (max-width: 520px) { .bar-row { grid-template-columns: 5.5rem 1fr 4rem; } }
+</style>
+<script>
+  // Datums staan in UTC; toon ze kort in de Nederlandse notatie.
+  document.querySelectorAll('.bar-day').forEach(function (el) {
+    var raw = el.getAttribute('data-utc'); if (!raw) return;
+    var d = new Date(raw + 'T00:00:00Z');
+    if (!isNaN(d)) el.textContent = d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
+  });
+</script>
+<%- include('partials/foot') %>
