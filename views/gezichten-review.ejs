@@ -9,6 +9,8 @@
     <% if (total) { %><p class="year-tools"><a class="btn" href="/beheer/gezichten/benoem">Begeleid benoemen (één groep tegelijk) &rarr;</a></p><% } %>
   </header>
 
+  <%- include('partials/scan-bar', { back: '/beheer/gezichten' }) %>
+
   <% if (!total) { %>
     <section class="card"><p class="muted">Niets meer te controleren — alle gevonden gezichten zijn toegewezen. 🎉</p></section>
   <% } %>

@@ -1,0 +1,37 @@
+<section class="card scan-bar">
+  <form method="post" action="/beheer/gezichten/scan" class="inline">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <input type="hidden" name="back" value="<%= typeof back !== 'undefined' ? back : '/beheer/gezichten' %>">
+    <button class="btn" type="submit" id="scanBtn">🔍 Nieuwe gezichten zoeken</button>
+  </form>
+  <span class="muted small" id="scanStatus">Zoekt gezichten in foto's die nog niet gescand zijn — ook nieuwe uploads.</span>
+</section>
+<script>
+(function(){
+  var btn = document.getElementById('scanBtn');
+  var st  = document.getElementById('scanStatus');
+  if (!st) return;
+  var timer = null;
+  function render(s){
+    if (s.error) { st.textContent = 'Scan mislukt: ' + s.error; if (btn) btn.disabled = false; return; }
+    if (s.running) {
+      st.textContent = 'Bezig… ' + s.done + '/' + s.total + " foto's · " + s.added + ' gezicht(en) gevonden' + (s.current ? ' (' + s.current + ')' : '');
+      if (btn) btn.disabled = true;
+    } else if (s.finishedAt && s.added >= 0) {
+      st.innerHTML = 'Klaar: ' + s.added + ' nieuw gezicht(en) gevonden' + (s.skipped ? ' · ' + s.skipped + ' overgeslagen' : '') + '. <a href="">Verversen</a>';
+      if (btn) btn.disabled = false;
+    }
+  }
+  function tick(){
+    fetch('/beheer/gezichten/scan-status', { headers: { 'Accept': 'application/json' } })
+      .then(function(r){ return r.json(); })
+      .then(function(s){
+        render(s);
+        if (s.running && !timer) timer = setInterval(tick, 2000);
+        if (!s.running && timer) { clearInterval(timer); timer = null; }
+      })
+      .catch(function(){});
+  }
+  tick();
+})();
+</script>

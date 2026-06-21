@@ -11,6 +11,8 @@
     </p>
   </header>
 
+  <%- include('partials/scan-bar', { back: '/beheer/gezichten/benoem' }) %>
+
   <% if (!group) { %>
     <section class="card benoem-done">
       <p>🎉 Niets meer in de wachtrij<% if (skipped) { %> — op <%= skipped %> overgeslagen gezicht<%= skipped === 1 ? '' : 'en' %> na<% } %>.</p>

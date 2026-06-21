@@ -10,7 +10,8 @@ const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const archiver = require('archiver');
 
-const { db, UPLOAD_DIR } = require('./db');
+const { db, DATA_DIR, UPLOAD_DIR } = require('./db');
+const faceScan = require('./face-scan');
 
 const app = express();
 app.locals.ASSET_VER = String(Date.now()); // verandert bij elke (her)start, dwingt verse CSS/JS af
@@ -371,6 +372,25 @@ function untaggedFacesList(skip) {
 app.get('/beheer/gezichten', requireLogin, (req, res) => {
   const faces = untaggedFacesList();
   res.render('gezichten-review', { groups: clusterFaces(faces), total: faces.length, persons: personsForSelect(), names: namedPersonNames() });
+});
+
+// Nieuwe voorraad gezichten klaarzetten: scan foto's die nog niet gescand zijn (ook uploads).
+app.post('/beheer/gezichten/scan', requireLogin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const st = faceScan.getState();
+  if (!st.running) {
+    faceScan.startScan(db, DATA_DIR, { minScore: 0.4 });
+    addLog(actor(res), 'gezichtsscan gestart', 'beheer');
+    req.session.flash = { type: 'ok', msg: 'Scan gestart — gevonden gezichten verschijnen vanzelf in de wachtrij.' };
+  } else {
+    req.session.flash = { type: 'info', msg: 'Er loopt al een scan.' };
+  }
+  res.redirect(req.body.back || '/beheer/gezichten');
+});
+
+// Voortgang van de scan (JSON, voor live weergave).
+app.get('/beheer/gezichten/scan-status', requireLogin, (req, res) => {
+  res.json(faceScan.getState());
 });
 
 // Begeleide benoem-modus: één gelijkenis-groep tegelijk, groot in beeld.
