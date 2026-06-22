@@ -93,12 +93,30 @@ zelf meteen, vóór je de link deelt.
 
 ## Bijwerken naar een nieuwe versie
 
+De service draait sinds kort vóór elke start zelf `npm install` (zie de regel
+`ExecStartPre=` in het service-bestand). Bijwerken is dus simpelweg de nieuwe
+code ophalen en herstarten — dependencies komen automatisch mee:
+
 ```bash
 cd /var/www/mannenvakanties
-# nieuwe bestanden plaatsen (data/-map laten staan!)
-npm install --omit=dev
-sudo systemctl restart mannenvakanties
+git pull                                  # of je auto-pull doet dit
+sudo systemctl restart mannenvakanties    # ExecStartPre draait dan npm install
 ```
+
+> Draai je een **bestaande** server bij die deze automatische install nog niet
+> had? Werk het service-bestand eenmalig bij, en doe de eerste (zware) install
+> met de hand zodat de timeout niet in de weg zit:
+>
+> ```bash
+> cd /var/www/mannenvakanties
+> npm install --omit=dev                  # eenmalig; haalt o.a. de ~285 MB detectiebibliotheken
+> sudo cp deploy/mannenvakanties.service /etc/systemd/system/
+> sudo nano /etc/systemd/system/mannenvakanties.service   # << >> velden opnieuw invullen
+> sudo systemctl daemon-reload
+> sudo systemctl restart mannenvakanties
+> ```
+>
+> Zorg dat `node_modules/` van de service-gebruiker is (`sudo chown -R mannen:mannen /var/www/mannenvakanties`), anders kan de automatische install niets wegschrijven.
 
 ## Back-ups
 
