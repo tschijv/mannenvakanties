@@ -5,8 +5,8 @@
   <p class="beheer-foot"><a href="/namen">&larr; Namen</a></p>
   <header class="beheer-head">
     <h1>Gezichten controleren</h1>
-    <p>Automatisch gevonden gezichten die nog geen naam hebben. Ze staan gegroepeerd op gelijkenis — koppel een hele groep in één keer aan een persoon, of verwijder missers. <strong><%= total %></strong> nog te doen.</p>
-    <% if (total) { %><p class="year-tools"><a class="btn" href="/beheer/gezichten/benoem">Begeleid benoemen (één groep tegelijk) &rarr;</a></p><% } %>
+    <p>Per groep staan gelijkende gezichten bij elkaar. <strong>Vink aan</strong> welke bij één persoon horen, kies of typ de persoon, en klik <em>Koppel aangevinkte</em>. Een misser haal je met de ✕ weg (zonder de pagina te herladen). <strong><%= total %></strong> nog te doen.</p>
+    <% if (total) { %><p class="year-tools"><a class="btn" href="/beheer/gezichten/benoem">Liever één groep tegelijk? Begeleid benoemen &rarr;</a></p><% } %>
   </header>
 
   <%- include('partials/scan-bar', { back: '/beheer/gezichten' }) %>
@@ -21,35 +21,77 @@
 
   <% groups.forEach(function(g, gi){ %>
     <section class="card review-group">
-      <div class="review-faces">
-        <% g.items.forEach(function(f){ %>
-          <div class="review-face">
-            <span class="face-thumb sm"><%- include('partials/facecrop', { face: { x:f.x, y:f.y, w:f.w, h:f.h, src: f.src } }) %></span>
-            <span class="review-face-meta"><%= f.year %></span>
-            <form method="post" action="/beheer/gezicht/<%= f.id %>/verwijderen" class="review-dismiss" onsubmit="return confirm('Dit gezicht verwijderen? (geen persoon)');">
-              <input type="hidden" name="_csrf" value="<%= csrf %>">
-              <input type="hidden" name="back" value="/beheer/gezichten">
-              <button class="review-x" type="submit" title="Geen gezicht / verwijderen" aria-label="Verwijderen">✕</button>
-            </form>
-          </div>
-        <% }) %>
-      </div>
-
-      <form method="post" action="/beheer/gezichten/groep" class="review-assign form row">
+      <form method="post" action="/beheer/gezichten/groep" class="review-group-form">
         <input type="hidden" name="_csrf" value="<%= csrf %>">
-        <input type="hidden" name="ids" value="<%= g.items.map(function(f){return f.id;}).join(',') %>">
-        <span class="review-count"><%= g.items.length %> gezicht<%= g.items.length === 1 ? '' : 'en' %></span>
-        <label class="field grow"><span>Bestaande persoon</span>
-          <select name="person_id">
-            <option value="">— nieuw —</option>
-            <% persons.forEach(function(p){ %><option value="<%= p.id %>"><%= p.label %></option><% }) %>
-          </select>
-        </label>
-        <label class="field grow"><span>…of naam</span><input type="text" name="new_name" list="namenlijst" placeholder="bv. Kees" autocomplete="off"></label>
-        <button class="btn" type="submit">Koppelen</button>
-        <button class="btn ghost" type="submit" name="create_unnamed" value="1" title="Maak hier vast een naamloze persoon van; naam kan later">Naamloos</button>
+        <div class="review-faces">
+          <% g.items.forEach(function(f){ %>
+            <div class="review-face">
+              <label class="review-pick">
+                <input type="checkbox" name="ids" value="<%= f.id %>" checked>
+                <span class="face-thumb sm"><%- include('partials/facecrop', { face: { x:f.x, y:f.y, w:f.w, h:f.h, src: f.src } }) %></span>
+                <span class="review-face-meta"><%= f.year %></span>
+                <span class="review-check" aria-hidden="true">✓</span>
+              </label>
+              <button type="button" class="review-x" data-del="/beheer/gezicht/<%= f.id %>/verwijderen" title="Geen gezicht — verwijderen" aria-label="Verwijderen">✕</button>
+            </div>
+          <% }) %>
+        </div>
+
+        <div class="review-assign">
+          <span class="review-count"><%= g.items.length %> gezicht<%= g.items.length === 1 ? '' : 'en' %> in deze groep</span>
+          <label class="field grow"><span>Nieuw persoon — typ de naam</span>
+            <input type="text" name="new_name" list="namenlijst" class="dup-input" placeholder="bv. Kees" autocomplete="off">
+            <span class="dup-hint" hidden>Deze naam bestaat al — wordt aan die persoon gekoppeld (geen dubbele).</span>
+          </label>
+          <label class="field grow"><span>…of kies een bestaande persoon</span>
+            <select name="person_id" class="dup-select">
+              <option value="">— kies —</option>
+              <% persons.forEach(function(p){ %><option value="<%= p.id %>"<%= p.name ? ' data-name="' + p.name + '"' : '' %>><%= p.label %></option><% }) %>
+            </select>
+          </label>
+          <button class="btn" type="submit">Koppel aangevinkte</button>
+          <button class="btn ghost" type="submit" name="create_unnamed" value="1" title="Maak van de aangevinkte gezichten vast een naamloze persoon; naam kan later">Naamloos</button>
+        </div>
       </form>
     </section>
   <% }) %>
 </main>
+
+<script>
+(function(){
+  // Misser verwijderen zonder de pagina te herladen (geen sprong naar boven).
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('[data-del]'); if (!b) return;
+    e.preventDefault();
+    if (!confirm('Dit gezicht verwijderen? (geen persoon)')) return;
+    var csrf = document.querySelector('input[name=_csrf]').value;
+    b.disabled = true;
+    fetch(b.getAttribute('data-del'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': csrf },
+      body: '_csrf=' + encodeURIComponent(csrf)
+    }).then(function(r){
+      if (r.ok || r.status === 302 || r.status === 200) {
+        var row = b.closest('.review-face'); if (row) row.remove();
+      } else { b.disabled = false; }
+    }).catch(function(){ b.disabled = false; });
+  });
+
+  // Bestaande naam ingetypt? Toon hint en wijs de bestaande persoon aan (voorkom dubbele).
+  var existing = {};
+  document.querySelectorAll('.dup-select option[data-name]').forEach(function(o){
+    existing[o.getAttribute('data-name').toLowerCase()] = o.value;
+  });
+  document.querySelectorAll('.dup-input').forEach(function(inp){
+    inp.addEventListener('input', function(){
+      var form = inp.closest('form');
+      var hint = form.querySelector('.dup-hint');
+      var sel = form.querySelector('.dup-select');
+      var match = existing[inp.value.trim().toLowerCase()];
+      if (match) { if (hint) hint.hidden = false; if (sel) sel.value = match; }
+      else { if (hint) hint.hidden = true; }
+    });
+  });
+})();
+</script>
 <%- include('partials/foot') %>

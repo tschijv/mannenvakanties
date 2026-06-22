@@ -449,14 +449,20 @@ app.post('/beheer/gezichten/benoem/reset', requireLogin, (req, res) => {
   res.redirect('/beheer/gezichten/benoem');
 });
 
-// Een groep gezichten in één keer aan een persoon koppelen.
+// De aangevinkte gezichten van een groep aan een persoon koppelen.
 app.post('/beheer/gezichten/groep', requireLogin, (req, res) => {
   if (!checkCsrf(req, res)) return;
-  const ids = String(req.body.ids || '').split(',').map((s) => parseInt(s, 10)).filter(Boolean);
-  if (!ids.length) return res.redirect('/beheer/gezichten');
+  let ids = req.body.ids;
+  if (ids === undefined) ids = [];
+  else if (!Array.isArray(ids)) ids = [ids];
+  ids = ids.map((n) => parseInt(n, 10)).filter(Boolean);
+  if (!ids.length) {
+    req.session.flash = { type: 'info', msg: 'Vink eerst de gezichten aan die bij één persoon horen.' };
+    return res.redirect('/beheer/gezichten');
+  }
   const personId = resolvePerson(req, res, { allowCreate: true });
   if (!personId) {
-    req.session.flash = { type: 'err', msg: 'Kies een persoon, vul een naam in, of maak een naamloze persoon.' };
+    req.session.flash = { type: 'err', msg: 'Typ een naam, kies een bestaande persoon, of klik “Naamloos”.' };
     return res.redirect('/beheer/gezichten');
   }
   const upd = db.prepare('UPDATE faces SET person_id = ? WHERE id = ? AND person_id IS NULL');
@@ -524,8 +530,14 @@ function resolvePerson(req, res, { allowCreate } = { allowCreate: true }) {
     if (newName) db.prepare('UPDATE persons SET name = ? WHERE id = ?').run(newName, personId);
     return personId;
   }
-  if (allowCreate && (newName || req.body.create_unnamed)) {
+  if (allowCreate && newName) {
+    // Bestaat deze naam al? Koppel dan aan die persoon i.p.v. een dubbele aan te maken.
+    const existing = db.prepare("SELECT id FROM persons WHERE name <> '' AND lower(name) = lower(?) ORDER BY id ASC LIMIT 1").get(newName);
+    if (existing) return existing.id;
     return Number(db.prepare('INSERT INTO persons (name, created_by) VALUES (?, ?)').run(newName, res.locals.user.id).lastInsertRowid);
+  }
+  if (allowCreate && req.body.create_unnamed) {
+    return Number(db.prepare('INSERT INTO persons (name, created_by) VALUES (?, ?)').run('', res.locals.user.id).lastInsertRowid);
   }
   return null;
 }
