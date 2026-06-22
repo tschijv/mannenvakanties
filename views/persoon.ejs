@@ -48,14 +48,14 @@
   </div>
 </header>
 
-<main id="album">
+<main id="album" data-csrf="<%= csrf %>">
   <% if (byYear.length) { %>
     <% byYear.forEach(function(g){ %>
       <section class="year paper-grain">
         <h2 class="person-year"><a href="/jaar/<%= g.year_id %>"><%= g.year %></a><% if (g.place) { %> <span class="muted">· <%= g.place %></span><% } %></h2>
         <div class="grid">
           <% g.items.forEach(function(p){ var rot = p.rotation || 0; var cs = (rot % 180 === 0) ? 1 : ((rot % 90 === 0) ? 1.34 : 1.66); var isCover = (person.cover_face_id && p.id === person.cover_face_id); %>
-            <div class="tl-photo<%= isCover ? ' is-cover' : '' %>">
+            <div class="tl-photo<%= isCover ? ' is-cover' : '' %>" data-face="<%= p.id %>">
               <button class="mount has-photo" type="button"
                       data-src="<%= p.src %>" data-cap="<%= p.caption %>" data-id="<%= p.photo_id %>" data-year-id="<%= g.year_id %>" data-rot="<%= rot %>" data-oriented="<%= p.oriented ? 1 : 0 %>"
                       aria-label="Vergroot foto<%= p.caption ? ': ' + p.caption : '' %>">
@@ -74,12 +74,11 @@
                     <input type="hidden" name="face_id" value="<%= isCover ? '' : p.id %>">
                     <button class="photo-act<%= isCover ? ' is-cur' : '' %>" type="submit" title="<%= isCover ? 'Huidige omslag — klik om te wissen' : 'Maak dit de omslagfoto in het Namenoverzicht' %>" aria-label="Omslagfoto">★</button>
                   </form>
-                  <form method="post" action="/beheer/gezicht/<%= p.id %>/verwijderen" onsubmit="return confirm('Deze foto van deze persoon verwijderen?');">
-                    <input type="hidden" name="_csrf" value="<%= csrf %>">
-                    <input type="hidden" name="back" value="/persoon/<%= person.id %>">
-                    <button class="photo-act danger" type="submit" title="Verwijder van deze persoon" aria-label="Verwijder van deze persoon">✕</button>
-                  </form>
                 </div>
+                <label class="photo-select" title="Selecteer om te verwijderen">
+                  <input type="checkbox" class="selbox" value="<%= p.id %>">
+                  <span class="photo-select-box" aria-hidden="true"></span>
+                </label>
               <% } %>
             </div>
           <% }) %>
@@ -91,6 +90,14 @@
   <% } %>
 
   <p class="year-back"><a href="/namen">&larr; Terug naar de namen</a></p>
+
+  <% if (user && byYear.length) { %>
+    <div class="select-bar" id="selectBar" hidden>
+      <span class="select-bar-count"><span id="selCount">0</span> geselecteerd</span>
+      <button type="button" class="btn danger" id="selDelete">Verwijder van <%= person.name || 'deze persoon' %></button>
+      <button type="button" class="linkbtn" id="selClear">Wis selectie</button>
+    </div>
+  <% } %>
 </main>
 
 <footer class="colophon">
@@ -114,4 +121,62 @@
 </div>
 
 <script src="/gallery.js?v=<%= typeof ASSET_VER !== 'undefined' ? ASSET_VER : '1' %>"></script>
+<% if (user) { %>
+<script>
+(function(){
+  var main = document.getElementById('album');
+  var bar = document.getElementById('selectBar');
+  if (!main || !bar) return;
+  var csrf = main.getAttribute('data-csrf');
+  var countEl = document.getElementById('selCount');
+  var delBtn = document.getElementById('selDelete');
+  var clearBtn = document.getElementById('selClear');
+
+  function selected(){ return Array.prototype.slice.call(document.querySelectorAll('.selbox:checked')); }
+  function update(){
+    var n = selected().length;
+    countEl.textContent = n;
+    bar.hidden = (n === 0);
+    document.querySelectorAll('.tl-photo').forEach(function(t){
+      var cb = t.querySelector('.selbox');
+      t.classList.toggle('is-selected', !!(cb && cb.checked));
+    });
+  }
+  // klik op selectievakje mag de lightbox niet openen
+  main.addEventListener('change', function(e){ if (e.target.classList.contains('selbox')) update(); });
+
+  clearBtn.addEventListener('click', function(){
+    document.querySelectorAll('.selbox:checked').forEach(function(cb){ cb.checked = false; });
+    update();
+  });
+
+  delBtn.addEventListener('click', function(){
+    var boxes = selected();
+    if (!boxes.length) return;
+    if (!confirm(boxes.length + ' foto(\'s) van deze persoon verwijderen?')) return;
+    var ids = boxes.map(function(cb){ return cb.value; });
+    delBtn.disabled = true;
+    var body = '_csrf=' + encodeURIComponent(csrf) + ids.map(function(id){ return '&ids=' + encodeURIComponent(id); }).join('');
+    fetch('/beheer/gezichten/verwijderen', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': csrf, 'Accept': 'application/json' },
+      body: body
+    }).then(function(r){ return r.ok ? r.json().catch(function(){ return { ok:true }; }) : Promise.reject(); })
+      .then(function(){
+        ids.forEach(function(id){
+          var el = document.querySelector('.tl-photo[data-face="' + id + '"]');
+          if (el) {
+            var sec = el.closest('section.year');
+            el.remove();
+            if (sec && !sec.querySelector('.tl-photo')) sec.remove(); // leeg jaar weghalen
+          }
+        });
+        update();
+      })
+      .catch(function(){ alert('Verwijderen mislukte. Ververs de pagina en probeer opnieuw.'); })
+      .then(function(){ delBtn.disabled = false; });
+  });
+})();
+</script>
+<% } %>
 <%- include('partials/foot') %>

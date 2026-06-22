@@ -574,6 +574,23 @@ app.post('/beheer/gezicht/:id/persoon', requireLogin, (req, res) => {
   res.redirect(req.body.back || ('/beheer/foto/' + face.photo_id + '/gezichten'));
 });
 
+// Meerdere gezichten in één keer verwijderen (multiselect; AJAX of gewone post).
+app.post('/beheer/gezichten/verwijderen', requireLogin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  let ids = req.body.ids;
+  if (ids === undefined) ids = [];
+  else if (!Array.isArray(ids)) ids = [ids];
+  ids = ids.map((n) => parseInt(n, 10)).filter(Boolean);
+  if (ids.length) {
+    const del = db.prepare('DELETE FROM faces WHERE id = ?');
+    const tx = db.transaction(() => { for (const id of ids) del.run(id); });
+    tx();
+    addLog(actor(res), ids.length + ' gezicht(en) verwijderd', 'content');
+  }
+  if ((req.headers.accept || '').includes('application/json')) return res.json({ ok: true, deleted: ids.length });
+  res.redirect(req.body.back || '/namen');
+});
+
 // Gezicht verwijderen.
 app.post('/beheer/gezicht/:id/verwijderen', requireLogin, (req, res) => {
   if (!checkCsrf(req, res)) return;

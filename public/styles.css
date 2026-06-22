@@ -441,6 +441,18 @@ a{color:var(--pen);}
 .photo-act.is-cur{background:var(--gold);color:var(--leather);}
 .photo-act:hover{filter:brightness(1.12);}
 .tl-photo.is-cover .frame{outline:3px solid var(--gold);outline-offset:2px;}
+/* selecteren om te verwijderen */
+.photo-select{position:absolute;top:6px;right:6px;z-index:6;cursor:pointer;line-height:0;}
+.photo-select input{position:absolute;opacity:0;width:0;height:0;}
+.photo-select-box{display:block;width:26px;height:26px;border-radius:50%;background:rgba(255,253,246,.9);border:2px solid rgba(40,28,18,.45);box-shadow:0 1px 3px rgba(0,0,0,.4);transition:background .12s,border-color .12s;}
+.photo-select input:checked + .photo-select-box{background:var(--stamp);border-color:var(--stamp);}
+.photo-select input:checked + .photo-select-box::after{content:"✓";color:#fff;display:block;text-align:center;line-height:22px;font-size:14px;}
+.tl-photo.is-selected .frame{outline:3px solid var(--stamp);outline-offset:2px;}
+.select-bar{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:14px;background:var(--ink,#2c2017);color:#fff;border-radius:999px;padding:10px 18px;box-shadow:0 8px 24px rgba(40,28,18,.45);}
+.select-bar-count{font-family:var(--meta);font-size:13px;}
+.select-bar .btn.danger{background:var(--stamp);border-color:var(--stamp);color:#fff;}
+.select-bar .linkbtn{color:rgba(255,255,255,.75);}
+.select-bar .linkbtn:hover{color:#fff;}
 /* op aanraakschermen geen hover: ook de tag-link altijd zichtbaar */
 @media (hover:none){.photo-tag-link{opacity:1;}}
 
