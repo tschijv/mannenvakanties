@@ -480,8 +480,9 @@ a{color:var(--pen);}
 .name-chip a{color:var(--pen);text-decoration:none;}
 .name-chip .inline{margin:0;}
 .chip-x{border:none;background:none;color:var(--stamp);cursor:pointer;font-size:11px;line-height:1;padding:2px;}
-.name-add{display:flex;gap:6px;align-items:center;margin:0;}
-.name-add input[type=text]{flex:1;min-width:0;padding:5px 8px;border:1px solid var(--paper-edge,#cdbf9c);border-radius:5px;font:inherit;font-size:13px;}
+.name-add{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;margin:0;}
+.name-add input[type=text]{flex:1 1 100%;width:100%;min-width:0;padding:7px 9px;border:1px solid var(--paper-edge,#cdbf9c);border-radius:5px;font:inherit;font-size:13px;}
+.name-add .save{flex:0 0 auto;}
 .name-tag-link{font-family:var(--meta);font-size:11px;color:var(--ink-soft);text-decoration:none;}
 .name-tag-link:hover{color:var(--gold);}
 
