@@ -1,0 +1,37 @@
+<%- include('partials/head', { title: 'Herkomst bezoekers — Beheer' }) %>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<%- include('partials/topbar') %>
+
+<main class="beheer">
+  <p class="beheer-foot"><a href="/beheer/statistieken">&larr; Statistieken</a> &middot; <a href="/beheer/logboek">Logboek</a></p>
+  <header class="beheer-head">
+    <h1>Herkomst van bezoekers</h1>
+    <p>Afgeleid uit het IP-adres (op stadsniveau) — we bewaren geen ruwe IP-adressen. <strong><%= located %></strong> bezoeken met een locatie<% if (unlocated) { %>, <%= unlocated %> zonder (lokaal netwerk of onbekend)<% } %>.</p>
+  </header>
+
+  <% if (places.length) { %>
+    <section class="card" style="padding:0;overflow:hidden;">
+      <div id="map"></div>
+    </section>
+    <script id="map-data" type="application/json"><%- JSON.stringify(places).replace(/</g, '\\u003c') %></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="/herkomst.js?v=<%= typeof ASSET_VER !== 'undefined' ? ASSET_VER : '1' %>"></script>
+
+    <section class="card">
+      <h2>Per land</h2>
+      <table class="leden-table">
+        <thead><tr><th>Land</th><th>Weergaves</th><th>Unieke bezoekers</th></tr></thead>
+        <tbody>
+          <% byCountry.forEach(function(c){ %>
+            <tr><td><%= c.country_name || c.country || '—' %></td><td><%= c.views %></td><td><%= c.visitors %></td></tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </section>
+  <% } else { %>
+    <section class="card">
+      <p class="muted">Nog geen bezoeken met een herkenbare locatie. Dit vult zich vanzelf zodra er bezoekers van buiten het lokale netwerk komen (de herkomst wordt pas sinds deze update vastgelegd).</p>
+    </section>
+  <% } %>
+</main>
+<%- include('partials/foot') %>

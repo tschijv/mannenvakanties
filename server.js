@@ -12,6 +12,26 @@ const archiver = require('archiver');
 
 const { db, DATA_DIR, UPLOAD_DIR } = require('./db');
 const faceScan = require('./face-scan');
+const geoip = require('geoip-lite');
+const { AsyncLocalStorage } = require('node:async_hooks');
+const reqCtx = new AsyncLocalStorage();
+
+// Herkomst (land/stad/coördinaten) afleiden uit een IP — offline, geen ruw IP bewaard.
+const PRIVATE_IP = /^(10\.|127\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::1|fc|fd|fe80)/i;
+function geoFromIp(ip) {
+  if (!ip) return null;
+  ip = String(ip).replace(/^::ffff:/, '');
+  if (PRIVATE_IP.test(ip)) return null;
+  const g = geoip.lookup(ip);
+  if (!g) return null;
+  return { country: g.country || null, city: g.city || null, lat: g.ll ? g.ll[0] : null, lng: g.ll ? g.ll[1] : null };
+}
+let _regionNames = null;
+function countryName(iso) {
+  if (!iso) return '';
+  try { if (!_regionNames) _regionNames = new Intl.DisplayNames(['nl'], { type: 'region' }); return _regionNames.of(iso) || iso; }
+  catch (e) { return iso; }
+}
 
 const app = express();
 app.locals.ASSET_VER = String(Date.now()); // verandert bij elke (her)start, dwingt verse CSS/JS af
@@ -35,7 +55,9 @@ const JOIN_ANSWER = normAnswer(process.env.JOIN_ANSWER || 'Moldavië');
 
 // Logboek: leg een gebeurtenis vast (wie deed wat). kind: 'content' | 'lid' | 'beheer'.
 function addLog(username, event, kind) {
-  try { db.prepare('INSERT INTO logs (username, event, kind) VALUES (?, ?, ?)').run(username || 'onbekend', event, kind || 'content'); } catch (e) { /* logging mag nooit de actie blokkeren */ }
+  const store = reqCtx.getStore();
+  const g = (store && store.geo) || null;
+  try { db.prepare('INSERT INTO logs (username, event, kind, country, city) VALUES (?, ?, ?, ?, ?)').run(username || 'onbekend', event, kind || 'content', g ? g.country : null, g ? g.city : null); } catch (e) { /* logging mag nooit de actie blokkeren */ }
 }
 function actor(res) { return (res.locals.user && res.locals.user.username) ? res.locals.user.username : 'onbekend'; }
 function yearLabel(id) { const y = db.prepare('SELECT year FROM years WHERE id = ?').get(id); return y ? y.year : ('jaar ' + id); }
@@ -80,7 +102,9 @@ app.use((req, res, next) => {
   res.locals.csrf = req.session.csrf;
   res.locals.flash = req.session.flash || null;
   delete req.session.flash;
-  next();
+  // Herkomst van dit verzoek; beschikbaar in de bezoek-telling én in addLog (via context).
+  res.locals.geo = geoFromIp(req.ip);
+  reqCtx.run({ geo: res.locals.geo }, next);
 });
 
 /* ------------------------------------------------------------------ */
@@ -97,7 +121,7 @@ function readCookie(req, name) {
   return m ? decodeURIComponent(m[1]) : null;
 }
 
-const insVisit = db.prepare('INSERT INTO visits (path, year_id, username, visitor) VALUES (?, ?, ?, ?)');
+const insVisit = db.prepare('INSERT INTO visits (path, year_id, username, visitor, country, city, lat, lng) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
 app.use((req, res, next) => {
   try {
     if (req.method === 'GET' && !VISIT_SKIP.test(req.path) &&
@@ -115,7 +139,9 @@ app.use((req, res, next) => {
       }
       const ym = req.path.match(/^\/jaar\/(\d+)/);
       const username = (res.locals.user && res.locals.user.username) || null;
-      insVisit.run(req.path, ym ? Number(ym[1]) : null, username, vid);
+      const g = res.locals.geo;
+      insVisit.run(req.path, ym ? Number(ym[1]) : null, username, vid,
+        g ? g.country : null, g ? g.city : null, g ? g.lat : null, g ? g.lng : null);
     }
   } catch (e) { /* tellen mag nooit een pagina blokkeren */ }
   next();
@@ -1122,10 +1148,28 @@ app.get('/beheer/leden', requireLogin, requireAdmin, (req, res) => {
   res.render('leden', { users });
 });
 
-/* Logboek (alleen admin): wie deed wat, wanneer */
+/* Logboek (alleen admin): wie deed wat, wanneer, vanwaar */
 app.get('/beheer/logboek', requireLogin, requireAdmin, (req, res) => {
-  const logs = db.prepare('SELECT created_at, username, event FROM logs ORDER BY id DESC LIMIT 300').all();
+  const logs = db.prepare('SELECT created_at, username, event, country, city FROM logs ORDER BY id DESC LIMIT 300').all();
+  logs.forEach((l) => { l.herkomst = [l.city, countryName(l.country)].filter(Boolean).join(', '); });
   res.render('logboek', { logs });
+});
+
+/* Herkomst van bezoekers op de kaart (alleen admin) */
+app.get('/beheer/herkomst', requireLogin, requireAdmin, (req, res) => {
+  const places = db.prepare(
+    'SELECT country, city, ROUND(lat, 2) AS lat, ROUND(lng, 2) AS lng, ' +
+    'COUNT(*) AS views, COUNT(DISTINCT visitor) AS visitors ' +
+    'FROM visits WHERE lat IS NOT NULL AND lng IS NOT NULL ' +
+    'GROUP BY country, city, ROUND(lat, 2), ROUND(lng, 2) ORDER BY views DESC'
+  ).all().map((r) => Object.assign(r, { country_name: countryName(r.country) }));
+  const byCountry = db.prepare(
+    "SELECT country, COUNT(*) AS views, COUNT(DISTINCT visitor) AS visitors " +
+    "FROM visits WHERE country IS NOT NULL AND country <> '' GROUP BY country ORDER BY views DESC"
+  ).all().map((r) => Object.assign(r, { country_name: countryName(r.country) }));
+  const located = db.prepare('SELECT COUNT(*) AS n FROM visits WHERE lat IS NOT NULL').get().n;
+  const unlocated = db.prepare('SELECT COUNT(*) AS n FROM visits WHERE lat IS NULL').get().n;
+  res.render('herkomst', { places, byCountry, located, unlocated });
 });
 
 /* Bezoekcijfers (alleen admin): hoeveel weergaves, unieke bezoekers, drukste jaren */

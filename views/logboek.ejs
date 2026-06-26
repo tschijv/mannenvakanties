@@ -5,19 +5,20 @@
   <p class="beheer-foot"><a href="/beheer">&larr; Terug naar beheer</a></p>
   <header class="beheer-head">
     <h1>Logboek</h1>
-    <p>Wie deed wat, en wanneer. De laatste 300 gebeurtenissen, nieuwste bovenaan.</p>
+    <p>Wie deed wat, wanneer en vanwaar. De laatste 300 gebeurtenissen, nieuwste bovenaan. <a href="/beheer/herkomst">Bekijk de herkomst op de kaart &rarr;</a></p>
   </header>
 
   <section class="card">
     <% if (logs.length) { %>
       <table class="leden-table log-table">
-        <thead><tr><th>Wanneer</th><th>Wie</th><th>Wat</th></tr></thead>
+        <thead><tr><th>Wanneer</th><th>Wie</th><th>Wat</th><th>Herkomst</th></tr></thead>
         <tbody>
           <% logs.forEach(function(l){ %>
             <tr>
               <td class="muted log-time" data-utc="<%= l.created_at %>"><%= l.created_at %></td>
               <td><%= l.username %></td>
               <td><%= l.event %></td>
+              <td class="muted"><%= l.herkomst || '—' %></td>
             </tr>
           <% }) %>
         </tbody>

@@ -140,6 +140,14 @@ CREATE INDEX IF NOT EXISTS idx_faces_person ON faces (person_id);
 /* Zelfgekozen omslag-gezicht per persoon (voor het Namenoverzicht); leeg = automatisch */
 ensureColumn('persons', 'cover_face_id', 'INTEGER');
 
+/* Herkomst van bezoekers/gebeurtenissen (afgeleid uit het IP; geen ruw IP opgeslagen) */
+ensureColumn('visits', 'country', 'TEXT');
+ensureColumn('visits', 'city', 'TEXT');
+ensureColumn('visits', 'lat', 'REAL');
+ensureColumn('visits', 'lng', 'REAL');
+ensureColumn('logs', 'country', 'TEXT');
+ensureColumn('logs', 'city', 'TEXT');
+
 /* Video's (YouTube-links) per jaar */
 db.exec(`
 CREATE TABLE IF NOT EXISTS videos (
