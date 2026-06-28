@@ -43,7 +43,7 @@
             <% var rot = p.rotation || 0; %>
             <% if (pmine) { %><label class="thumb-check"><input type="checkbox" class="selbox" value="<%= p.id %>" aria-label="Selecteer foto"></label><% } %>
             <div class="thumb-pic">
-              <img loading="lazy" src="<%= p.src %>" alt="<%= p.caption || 'Foto' %>" class="<%= p.oriented ? 'exif-fixed' : '' %>" style="transform:rotate(<%= rot %>deg);">
+              <img loading="lazy" src="/thumb/<%= p.id %>" alt="<%= p.caption || 'Foto' %>" class="<%= p.oriented ? 'exif-fixed' : '' %>" style="transform:rotate(<%= rot %>deg);">
             </div>
             <% if (pmine) { %>
               <div class="rot-row">

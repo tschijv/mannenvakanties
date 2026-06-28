@@ -5,17 +5,36 @@
   <p class="beheer-foot"><a href="/beheer/statistieken">&larr; Statistieken</a> &middot; <a href="/beheer/herkomst">Herkomst op de kaart</a></p>
   <header class="beheer-head">
     <h1>Anonieme bezoekers</h1>
-    <p>Bezoekers die niet ingelogd zijn, geteld per apparaat (via een anonieme cookie). <strong><%= totals.unique %></strong> unieke bezoekers, <strong><%= totals.views %></strong> weergaves, waarvan <%= totals.geo %> met een herkenbare herkomst.</p>
-    <p class="muted small">Let op: veel eenmalige bezoekers (één weergave, vaak uit de VS/India) zijn waarschijnlijk zoekmachines of scrapers, niet echte mensen. De herkomst wordt pas sinds 26 juni vastgelegd.</p>
+    <p>Niet-ingelogde bezoekers, geteld per apparaat (anonieme cookie). <strong><%= totals.humans %></strong> mensen en <strong><%= totals.bots %></strong> bots/crawlers; <%= totals.geo %> met een herkenbare herkomst.</p>
+    <p class="filter-tabs">
+      <a class="<%= filter === 'alle' ? 'is-active' : '' %>" href="/beheer/bezoekers">Alles</a>
+      <a class="<%= filter === 'mens' ? 'is-active' : '' %>" href="/beheer/bezoekers?type=mens">Alleen mensen</a>
+      <a class="<%= filter === 'bot' ? 'is-active' : '' %>" href="/beheer/bezoekers?type=bot">Alleen bots</a>
+    </p>
   </header>
+
+  <% if (topBots && topBots.length) { %>
+    <section class="card">
+      <h2>Bots / crawlers</h2>
+      <table class="leden-table">
+        <thead><tr><th>Crawler</th><th>Weergaves</th><th>Keren langs</th></tr></thead>
+        <tbody>
+          <% topBots.forEach(function(b){ %>
+            <tr><td><%= b.bot_name %></td><td><%= b.views %></td><td><%= b.visitors %></td></tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </section>
+  <% } %>
 
   <section class="card">
     <% if (visitors.length) { %>
       <table class="leden-table">
-        <thead><tr><th>Herkomst</th><th>Weergaves</th><th>Eerste bezoek</th><th>Laatste bezoek</th></tr></thead>
+        <thead><tr><th>Soort</th><th>Herkomst</th><th>Weergaves</th><th>Eerste bezoek</th><th>Laatste bezoek</th></tr></thead>
         <tbody>
           <% visitors.forEach(function(v){ %>
             <tr>
+              <td><% if (v.is_bot) { %><span class="badge-bot">🤖 <%= v.bot_name || 'bot' %></span><% } else { %><span class="badge-human">👤 mens</span><% } %></td>
               <td><%= v.herkomst || '—' %></td>
               <td><%= v.views %></td>
               <td class="muted log-time" data-utc="<%= v.first_seen %>"><%= v.first_seen %></td>
@@ -24,17 +43,14 @@
           <% }) %>
         </tbody>
       </table>
-      <% if (totals.unique > visitors.length) { %>
-        <p class="muted small">De <%= visitors.length %> meest recente bezoekers worden getoond.</p>
-      <% } %>
+      <% if (visitors.length >= 500) { %><p class="muted small">De 500 meest recente bezoekers worden getoond.</p><% } %>
     <% } else { %>
-      <p class="muted">Nog geen anonieme bezoekers geteld.</p>
+      <p class="muted">Geen bezoekers in deze selectie.</p>
     <% } %>
   </section>
 </main>
 
 <script>
-  // Tijden staan in UTC; toon ze in Nederlandse tijd.
   document.querySelectorAll('.log-time').forEach(function (el) {
     var raw = el.getAttribute('data-utc'); if (!raw) return;
     var d = new Date(raw.replace(' ', 'T') + 'Z');

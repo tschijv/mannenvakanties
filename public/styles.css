@@ -205,6 +205,11 @@ a{color:var(--pen);}
 .geo-badge { font-family: var(--meta); font-size: 11px; letter-spacing: .03em; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
 .geo-badge.has-geo { background: rgba(39,67,92,.12); color: var(--pen); }
 .geo-badge.no-geo { background: rgba(156,59,46,.14); color: var(--stamp); font-weight: 600; }
+.filter-tabs{display:flex;gap:6px;flex-wrap:wrap;font-family:var(--meta);font-size:12px;margin-top:8px;}
+.filter-tabs a{text-decoration:none;color:var(--ink-soft);padding:4px 12px;border:1px solid var(--paper-edge);border-radius:999px;}
+.filter-tabs a.is-active{background:var(--ink);color:#fff;border-color:var(--ink);}
+.badge-bot{font-family:var(--meta);font-size:11px;color:var(--stamp);white-space:nowrap;}
+.badge-human{font-family:var(--meta);font-size:11px;color:var(--ink-soft);white-space:nowrap;}
 .year-row:hover { background: rgba(255,255,255,.85); }
 .btn.small { padding: .35rem .7rem; font-size: .9rem; white-space: nowrap; }
 

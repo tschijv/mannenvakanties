@@ -23,7 +23,7 @@
             <span class="tl-dot" aria-hidden="true"></span>
             <span class="tl-card">
               <span class="tl-cover">
-                <% if (y.cover) { %><img loading="lazy" src="<%= y.cover %>" alt=""><% } else { %><span class="tl-cover-empty" aria-hidden="true">✦</span><% } %>
+                <% if (y.cover_id) { %><img loading="lazy" src="/thumb/<%= y.cover_id %>" alt=""><% } else { %><span class="tl-cover-empty" aria-hidden="true">✦</span><% } %>
               </span>
               <span class="tl-body">
                 <% if (y.place) { %><b class="tl-place"><%= y.place %></b><% } %>

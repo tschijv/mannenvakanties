@@ -22,7 +22,7 @@
               <div class="frame">
                 <span class="corner tl"></span><span class="corner tr"></span>
                 <span class="corner bl"></span><span class="corner br"></span>
-                <img loading="lazy" decoding="async" src="<%= g.src %>" alt="Groepsfoto <%= g.year %>" class="<%= g.oriented ? 'exif-fixed' : '' %>" style="transform:rotate(<%= rot %>deg) scale(<%= cs %>);">
+                <img loading="lazy" decoding="async" src="/thumb/<%= g.photo_id %>" alt="Groepsfoto <%= g.year %>" class="<%= g.oriented ? 'exif-fixed' : '' %>" style="transform:rotate(<%= rot %>deg) scale(<%= cs %>);">
               </div>
             </button>
             <figcaption class="group-cap">

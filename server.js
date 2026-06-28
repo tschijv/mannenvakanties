@@ -111,8 +111,33 @@ app.use((req, res, next) => {
 /*  Bezoekcijfers: leg paginaweergaves vast (geen IP, geen tracking)   */
 /* ------------------------------------------------------------------ */
 // Alleen echte pagina's tellen — geen assets, beheeracties, downloads of in-/uitloggen.
-const VISIT_SKIP = /^\/(uploads|beheer|download|inloggen|aanmelden|uitloggen|favicon|robots|styles|gallery|kaart\.js|beheer\.js)/;
-const BOT_UA = /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|preview|monitor|curl|wget|python-requests|headless/i;
+const VISIT_SKIP = /^\/(uploads|thumb|beheer|download|inloggen|aanmelden|uitloggen|favicon|robots|styles|gallery|kaart\.js|beheer\.js)/;
+// Bots/crawlers worden wél geteld, maar gemarkeerd (is_bot) zodat ze apart te zien zijn.
+const BOT_UA = /bot|crawl|spider|slurp|bing|google|yandex|baidu|duckduck|sogou|exabot|facebookexternalhit|facebot|ia_archiver|archive\.org|ahrefs|semrush|mj12|dotbot|petalbot|seznam|gptbot|ccbot|claudebot|claude-web|anthropic|bytespider|amazonbot|applebot|perplexitybot|dataforseo|serpstat|screaming|headless|phantom|puppeteer|playwright|python-requests|python-httpx|aiohttp|scrapy|http_client|go-http-client|node-fetch|okhttp|libwww|wget|curl|httrack|feedfetcher|feedburner|rss|preview|monitor|uptime|pingdom|statuscake|telegrambot|whatsapp|twitterbot|slackbot|discordbot|linkedinbot|embedly|skypeuripreview/i;
+function isBotUA(ua) { return !ua || BOT_UA.test(ua); }
+// Bekende crawlers herkennen voor een leesbare naam (eerste match wint).
+const BOT_NAMES = [
+  [/googlebot|google-inspectiontool|google favicon|feedfetcher-google|apis-google|mediapartners-google/i, 'Google'],
+  [/bingbot|bingpreview|msnbot|adidxbot/i, 'Bing'],
+  [/yandex/i, 'Yandex'], [/baidu/i, 'Baidu'], [/duckduck/i, 'DuckDuckGo'],
+  [/sogou/i, 'Sogou'], [/seznam/i, 'Seznam'], [/exabot/i, 'Exalead'],
+  [/gptbot|oai-searchbot|chatgpt/i, 'OpenAI'], [/ccbot/i, 'Common Crawl'],
+  [/claudebot|claude-web|anthropic/i, 'Anthropic'], [/perplexitybot|perplexity/i, 'Perplexity'],
+  [/bytespider/i, 'ByteDance'], [/amazonbot/i, 'Amazon'], [/applebot/i, 'Apple'],
+  [/ahrefs/i, 'Ahrefs'], [/semrush/i, 'Semrush'], [/mj12bot|majestic/i, 'Majestic'],
+  [/dotbot/i, 'Moz'], [/petalbot/i, 'Petal (Huawei)'], [/dataforseo|serpstat|screaming frog/i, 'SEO-tool'],
+  [/facebookexternalhit|facebot/i, 'Facebook'], [/twitterbot/i, 'Twitter/X'],
+  [/linkedinbot/i, 'LinkedIn'], [/slackbot/i, 'Slack'], [/discordbot/i, 'Discord'],
+  [/telegrambot/i, 'Telegram'], [/whatsapp/i, 'WhatsApp'], [/embedly|skypeuripreview/i, 'Link-preview'],
+  [/ia_archiver|archive\.org/i, 'Internet Archive'],
+  [/pingdom|uptimerobot|statuscake|monitor/i, 'Monitoring'],
+  [/curl|wget|python-requests|python-httpx|aiohttp|scrapy|go-http-client|node-fetch|okhttp|libwww|httrack|java\//i, 'Script/tool'],
+];
+function botName(ua) {
+  if (!ua) return 'Onbekende bot';
+  for (const [re, name] of BOT_NAMES) if (re.test(ua)) return name;
+  return BOT_UA.test(ua) ? 'Onbekende bot' : null;
+}
 
 function readCookie(req, name) {
   const raw = req.headers.cookie;
@@ -121,12 +146,13 @@ function readCookie(req, name) {
   return m ? decodeURIComponent(m[1]) : null;
 }
 
-const insVisit = db.prepare('INSERT INTO visits (path, year_id, username, visitor, country, city, lat, lng) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+const insVisit = db.prepare('INSERT INTO visits (path, year_id, username, visitor, country, city, lat, lng, is_bot, bot_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
 app.use((req, res, next) => {
   try {
     if (req.method === 'GET' && !VISIT_SKIP.test(req.path) &&
-        (req.headers.accept || '').includes('text/html') &&
-        !BOT_UA.test(req.headers['user-agent'] || '')) {
+        (req.headers.accept || '').includes('text/html')) {
+      const ua = req.headers['user-agent'] || '';
+      const bn = botName(ua); // naam van de crawler, of null voor een mens
       // anonieme bezoeker-sleutel via lichte first-party cookie (geen persoonsgegevens)
       let vid = readCookie(req, 'mv_vid');
       if (!vid) {
@@ -141,7 +167,8 @@ app.use((req, res, next) => {
       const username = (res.locals.user && res.locals.user.username) || null;
       const g = res.locals.geo;
       insVisit.run(req.path, ym ? Number(ym[1]) : null, username, vid,
-        g ? g.country : null, g ? g.city : null, g ? g.lat : null, g ? g.lng : null);
+        g ? g.country : null, g ? g.city : null, g ? g.lat : null, g ? g.lng : null,
+        bn ? 1 : 0, bn);
     }
   } catch (e) { /* tellen mag nooit een pagina blokkeren */ }
   next();
@@ -195,7 +222,8 @@ function yearsOverview() {
   return db.prepare(
     'SELECT y.*, ' +
     '(SELECT COUNT(*) FROM photos p WHERE p.year_id = y.id AND p.deleted = 0) AS photo_count, ' +
-    '(SELECT p.src FROM photos p WHERE p.year_id = y.id AND p.deleted = 0 ORDER BY p.sort ASC, p.id ASC LIMIT 1) AS cover ' +
+    '(SELECT p.src FROM photos p WHERE p.year_id = y.id AND p.deleted = 0 ORDER BY p.sort ASC, p.id ASC LIMIT 1) AS cover, ' +
+    '(SELECT p.id FROM photos p WHERE p.year_id = y.id AND p.deleted = 0 ORDER BY p.sort ASC, p.id ASC LIMIT 1) AS cover_id ' +
     'FROM years y ORDER BY y.year ASC, y.id ASC'
   ).all();
 }
@@ -264,6 +292,38 @@ function exifOrientation(filePath) {
 function orientationToRotation(o) {
   return ({ 3: 180, 4: 180, 5: 90, 6: 90, 7: 270, 8: 270 })[o] || 0;
 }
+
+/* ------------------------------------------------------------------ */
+/*  Thumbnails: verkleinde versie van een foto (scheelt fors bandbreedte) */
+/* ------------------------------------------------------------------ */
+const THUMB_DIR = path.join(DATA_DIR, 'thumbs');
+fs.mkdirSync(THUMB_DIR, { recursive: true });
+let sharp = null;
+try { sharp = require('sharp'); } catch (e) { console.error('sharp niet beschikbaar — thumbnails vallen terug op de originele foto.'); }
+
+app.get('/thumb/:id', async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!id) return res.status(404).end();
+  const p = db.prepare('SELECT src FROM photos WHERE id = ? AND deleted = 0').get(id);
+  if (!p) return res.status(404).end();
+  const cache = path.join(THUMB_DIR, id + '.jpg');
+  if (fs.existsSync(cache)) {
+    res.setHeader('Cache-Control', 'public, max-age=2592000');
+    return res.sendFile(cache);
+  }
+  if (!sharp) return res.redirect(p.src); // geen sharp -> origineel
+  try {
+    let buf;
+    if (p.src.startsWith('/uploads/')) buf = fs.readFileSync(path.join(DATA_DIR, p.src.replace(/^\//, '')));
+    else { const r = await fetch(p.src); if (!r.ok) throw new Error('HTTP ' + r.status); buf = Buffer.from(await r.arrayBuffer()); }
+    const out = await sharp(buf).flatten({ background: '#ffffff' }).resize({ width: 600, withoutEnlargement: true }).jpeg({ quality: 72 }).toBuffer();
+    try { fs.writeFileSync(cache, out); } catch (e) { /* cache mag falen */ }
+    res.setHeader('Cache-Control', 'public, max-age=2592000');
+    res.type('jpeg').send(out);
+  } catch (e) {
+    res.redirect(p.src); // bij twijfel het origineel
+  }
+});
 
 /* ------------------------------------------------------------------ */
 /*  Publieke ingangen: tijdlijn, kaart, en losse jaar-pagina's         */
@@ -1155,20 +1215,28 @@ app.get('/beheer/logboek', requireLogin, requireAdmin, (req, res) => {
   res.render('logboek', { logs });
 });
 
-/* Anonieme bezoekers met hun herkomst (alleen admin) */
+/* Anonieme bezoekers met hun herkomst (alleen admin); ?type=mens|bot|alle */
 app.get('/beheer/bezoekers', requireLogin, requireAdmin, (req, res) => {
+  const filter = req.query.type === 'bot' ? 'bot' : (req.query.type === 'mens' ? 'mens' : 'alle');
+  let where = 'username IS NULL AND visitor IS NOT NULL';
+  if (filter === 'bot') where += ' AND is_bot = 1';
+  if (filter === 'mens') where += ' AND COALESCE(is_bot,0) = 0';
   const visitors = db.prepare(
     'SELECT visitor, COUNT(*) AS views, MIN(created_at) AS first_seen, MAX(created_at) AS last_seen, ' +
-    'MAX(country) AS country, MAX(city) AS city ' +
-    'FROM visits WHERE username IS NULL AND visitor IS NOT NULL ' +
-    'GROUP BY visitor ORDER BY last_seen DESC LIMIT 500'
+    'MAX(country) AS country, MAX(city) AS city, MAX(is_bot) AS is_bot, MAX(bot_name) AS bot_name ' +
+    'FROM visits WHERE ' + where + ' GROUP BY visitor ORDER BY last_seen DESC LIMIT 500'
   ).all().map((v) => Object.assign(v, { herkomst: [v.city, countryName(v.country)].filter(Boolean).join(', ') }));
+  const cnt = (w) => db.prepare('SELECT COUNT(DISTINCT visitor) AS n FROM visits WHERE username IS NULL AND visitor IS NOT NULL AND ' + w).get().n;
   const totals = {
-    views: db.prepare('SELECT COUNT(*) AS n FROM visits WHERE username IS NULL').get().n,
-    unique: db.prepare('SELECT COUNT(DISTINCT visitor) AS n FROM visits WHERE username IS NULL AND visitor IS NOT NULL').get().n,
-    geo: db.prepare("SELECT COUNT(DISTINCT visitor) AS n FROM visits WHERE username IS NULL AND country IS NOT NULL AND country <> ''").get().n,
+    humans: cnt('COALESCE(is_bot,0) = 0'),
+    bots: cnt('is_bot = 1'),
+    geo: cnt("country IS NOT NULL AND country <> ''"),
   };
-  res.render('bezoekers', { visitors, totals });
+  const topBots = db.prepare(
+    "SELECT bot_name, COUNT(*) AS views, COUNT(DISTINCT visitor) AS visitors " +
+    "FROM visits WHERE is_bot = 1 AND bot_name IS NOT NULL GROUP BY bot_name ORDER BY views DESC"
+  ).all();
+  res.render('bezoekers', { visitors, totals, topBots, filter });
 });
 
 /* Herkomst van bezoekers op de kaart (alleen admin) */
@@ -1192,33 +1260,37 @@ app.get('/beheer/herkomst', requireLogin, requireAdmin, (req, res) => {
 app.get('/beheer/statistieken', requireLogin, requireAdmin, (req, res) => {
   const one = (sql, ...p) => db.prepare(sql).get(...p);
 
+  // Mensen = geen bot. De koppen tonen mensen; bots staan er los onder.
+  const H = "COALESCE(is_bot,0) = 0";
   const totals = {
-    views:    one("SELECT COUNT(*) AS n FROM visits").n,
-    visitors: one("SELECT COUNT(DISTINCT visitor) AS n FROM visits").n,
-    today:    one("SELECT COUNT(*) AS n FROM visits WHERE date(created_at) = date('now')").n,
-    week:     one("SELECT COUNT(*) AS n FROM visits WHERE created_at >= datetime('now','-7 days')").n,
-    month:    one("SELECT COUNT(*) AS n FROM visits WHERE created_at >= datetime('now','-30 days')").n,
-    members:  one("SELECT COUNT(*) AS n FROM visits WHERE username IS NOT NULL").n,
+    views:    one("SELECT COUNT(*) AS n FROM visits WHERE " + H).n,
+    visitors: one("SELECT COUNT(DISTINCT visitor) AS n FROM visits WHERE " + H).n,
+    today:    one("SELECT COUNT(*) AS n FROM visits WHERE " + H + " AND date(created_at) = date('now')").n,
+    week:     one("SELECT COUNT(*) AS n FROM visits WHERE " + H + " AND created_at >= datetime('now','-7 days')").n,
+    month:    one("SELECT COUNT(*) AS n FROM visits WHERE " + H + " AND created_at >= datetime('now','-30 days')").n,
+    members:  one("SELECT COUNT(*) AS n FROM visits WHERE username IS NOT NULL AND " + H).n,
+    botViews: one("SELECT COUNT(*) AS n FROM visits WHERE is_bot = 1").n,
+    botVisitors: one("SELECT COUNT(DISTINCT visitor) AS n FROM visits WHERE is_bot = 1").n,
   };
   totals.guests = totals.views - totals.members;
 
-  // Per dag, laatste 30 dagen (alleen dagen met bezoek; view vult gaten op).
+  // Per dag, laatste 30 dagen — alleen mensen (bots zouden de grafiek vertekenen).
   const perDay = db.prepare(
     "SELECT date(created_at) AS day, COUNT(*) AS views, COUNT(DISTINCT visitor) AS visitors " +
-    "FROM visits WHERE created_at >= datetime('now','-29 days') " +
+    "FROM visits WHERE " + H + " AND created_at >= datetime('now','-29 days') " +
     "GROUP BY day ORDER BY day ASC"
   ).all();
 
-  // Drukste jaren (op jaar-pagina's).
+  // Drukste jaren (mensen).
   const topYears = db.prepare(
     "SELECT y.id, y.year, y.place, COUNT(*) AS views, COUNT(DISTINCT v.visitor) AS visitors " +
-    "FROM visits v JOIN years y ON y.id = v.year_id " +
+    "FROM visits v JOIN years y ON y.id = v.year_id WHERE " + H + " " +
     "GROUP BY v.year_id ORDER BY views DESC, y.year ASC LIMIT 20"
   ).all();
 
-  // Drukste pagina's (vaste pagina's, geen jaar-detail).
+  // Drukste pagina's (mensen, vaste pagina's, geen jaar-detail).
   const topPages = db.prepare(
-    "SELECT path, COUNT(*) AS views FROM visits WHERE year_id IS NULL " +
+    "SELECT path, COUNT(*) AS views FROM visits WHERE year_id IS NULL AND " + H + " " +
     "GROUP BY path ORDER BY views DESC LIMIT 12"
   ).all();
 

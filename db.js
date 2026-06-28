@@ -148,6 +148,10 @@ ensureColumn('visits', 'lng', 'REAL');
 ensureColumn('logs', 'country', 'TEXT');
 ensureColumn('logs', 'city', 'TEXT');
 
+/* Markeer bezoeken van bots/crawlers (wel tellen, apart te zien) + welke crawler */
+ensureColumn('visits', 'is_bot', 'INTEGER NOT NULL DEFAULT 0');
+ensureColumn('visits', 'bot_name', 'TEXT');
+
 /* Video's (YouTube-links) per jaar */
 db.exec(`
 CREATE TABLE IF NOT EXISTS videos (

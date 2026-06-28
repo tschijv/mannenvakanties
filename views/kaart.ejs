@@ -14,7 +14,7 @@
 <main class="map-wrap">
   <% if (years.length) { %>
     <div id="map"></div>
-    <script id="map-data" type="application/json"><%- JSON.stringify(years.map(function(y){ return { id: y.id, year: y.year, place: y.place, lat: y.lat, lng: y.lng, cover: y.cover, count: y.photo_count }; })).replace(/</g, '\\u003c') %></script>
+    <script id="map-data" type="application/json"><%- JSON.stringify(years.map(function(y){ return { id: y.id, year: y.year, place: y.place, lat: y.lat, lng: y.lng, cover_id: y.cover_id, count: y.photo_count }; })).replace(/</g, '\\u003c') %></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script src="/kaart.js"></script>
   <% } else { %>

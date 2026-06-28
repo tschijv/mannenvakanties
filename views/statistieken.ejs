@@ -18,7 +18,9 @@
       <div class="stat"><span class="stat-num"><%= totals.views %></span><span class="stat-label">weergaves totaal</span></div>
       <div class="stat"><span class="stat-num"><%= totals.visitors %></span><span class="stat-label">unieke bezoekers</span></div>
       <div class="stat"><span class="stat-num"><%= totals.members %><span class="muted"> / <%= totals.guests %></span></span><span class="stat-label">leden / gasten</span></div>
+      <div class="stat"><span class="stat-num"><%= totals.botViews %></span><span class="stat-label"><a href="/beheer/bezoekers?type=bot">bots / crawlers</a></span></div>
     </div>
+    <p class="muted small">De cijfers hierboven tellen alleen echte mensen; bots/crawlers staan apart (<%= totals.botVisitors %> verschillende, <%= totals.botViews %> weergaves).</p>
   </section>
 
   <section class="card">

@@ -20,8 +20,8 @@
     bounds.push([y.lat, y.lng]);
 
     var safePlace = (y.place || '').replace(/[<>&]/g, '');
-    var cover = y.cover
-      ? '<span class="pop-cover"><img src="' + y.cover + '" alt=""></span>'
+    var cover = y.cover_id
+      ? '<span class="pop-cover"><img src="/thumb/' + y.cover_id + '" alt=""></span>'
       : '';
     var html =
       '<a class="pop" href="/jaar/' + y.id + '">' +
