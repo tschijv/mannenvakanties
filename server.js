@@ -1387,8 +1387,9 @@ app.get('/beheer/techniek', requireLogin, requireAdmin, (req, res) => {
   const groups = [
     { title: 'Server & hosting', items: [
       { name: 'Node.js', detail: process.version },
-      { name: 'Besturingssysteem', detail: process.platform + ' / ' + process.arch },
-      { name: 'Webserver / proxy', detail: 'nginx (reverse proxy) met HTTPS via Let’s Encrypt' },
+      { name: 'Server', detail: 'KVM virtuele machine (Linux), ' + process.platform + ' / ' + process.arch },
+      { name: 'Reverse proxy + HTTPS', detail: 'Caddy (in een Docker-container), met automatisch Let’s Encrypt-certificaat' },
+      { name: 'App-uitvoering', detail: 'Node draait direct op de host als systemd-service; Caddy stuurt mannenvakanties.nl → poort 3000' },
       { name: 'Procesbeheer', detail: 'systemd-service (herstart automatisch, installeert updates bij start)' },
       { name: 'Uitrollen', detail: 'Git: push → de server haalt het zelf op (auto-pull)' },
     ]},
