@@ -3,7 +3,7 @@
 
 <header class="year-hero paper-grain">
   <div class="year-hero-inner person-hero">
-    <p class="year-hero-eyebrow"><a href="/namen">&larr; Namen</a></p>
+    <p class="year-hero-eyebrow"><a href="/namen">&larr; De mannen</a></p>
     <div class="person-head">
       <span class="face-thumb person-cover">
         <% if (person.cover) { %><%- include('partials/facecrop', { face: person.cover }) %><% } else { %><span class="face-empty" aria-hidden="true">?</span><% } %>
@@ -89,7 +89,7 @@
     <p class="empty-note">Nog geen foto's aan deze persoon gekoppeld.</p>
   <% } %>
 
-  <p class="year-back"><a href="/namen">&larr; Terug naar de namen</a></p>
+  <p class="year-back"><a href="/namen">&larr; Terug naar de mannen</a></p>
 
   <% if (user && byYear.length) { %>
     <div class="select-bar" id="selectBar" hidden>

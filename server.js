@@ -438,7 +438,7 @@ function clusterFaces(faces) {
   return clusters;
 }
 
-app.get('/namen', requireLogin, (req, res) => {
+app.get('/namen', (req, res) => {
   res.render('namen', { persons: personsOverview(), untagged: untaggedFaceCount() });
 });
 
@@ -558,7 +558,7 @@ app.post('/beheer/gezichten/groep', requireLogin, (req, res) => {
   res.redirect('/beheer/gezichten');
 });
 
-app.get('/persoon/:id', requireLogin, (req, res) => {
+app.get('/persoon/:id', (req, res) => {
   const person = db.prepare('SELECT * FROM persons WHERE id = ?').get(req.params.id);
   if (!person) return res.redirect('/namen');
   const faces = db.prepare(
