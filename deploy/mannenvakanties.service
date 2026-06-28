@@ -14,7 +14,7 @@ WorkingDirectory=<<pad, bv. /var/www/mannenvakanties>>
 # Controleer het pad naar node met:  which node
 # Dependencies bijwerken vóór elke start (bv. na een 'git pull' die package.json wijzigde).
 # Het '-' ervoor betekent: faalt dit, dan start de app gewoon toch door — de site gaat nooit plat.
-ExecStartPre=-/usr/bin/env npm install --omit=dev --no-audit --no-fund
+ExecStartPre=-/usr/bin/env npm install --omit=dev --no-audit --no-fund --no-package-lock
 ExecStart=/usr/bin/node server.js
 Restart=on-failure
 RestartSec=5
