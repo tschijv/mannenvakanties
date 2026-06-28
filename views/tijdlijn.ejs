@@ -1,13 +1,11 @@
 <%- include('partials/head', { title: 'Mannenvakanties — tijdlijn' }) %>
 <%- include('partials/pubnav', { active: 'tijdlijn' }) %>
 
-<header class="cover cover-sm">
+<header class="cover cover-slim home-hero">
   <div class="cover-frame">
-    <p class="eyebrow">Een gedeeld fotoalbum</p>
     <h1>Mannen&shy;vakanties</h1>
-    <p class="tagline">Van een weekendje weg tot een jaarlijkse traditie — jaar voor jaar.</p>
     <% if (years.length) { %>
-      <p class="cover-count"><%= years.length %> vastgelegde mannenvakantie<%= years.length === 1 ? '' : 's' %></p>
+      <p class="cover-count"><%= years.length %> vastgelegde mannenvakantie<%= years.length === 1 ? '' : 's' %> &middot; een gedeeld fotoalbum</p>
     <% } %>
     <%- include('partials/entries', { active: 'tijdlijn' }) %>
   </div>

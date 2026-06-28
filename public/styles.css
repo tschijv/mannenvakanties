@@ -253,7 +253,12 @@ a{color:var(--pen);}
 .entry-tx small{font-family:var(--meta);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:rgba(231,220,196,.6);margin-top:3px;}
 
 /* ===== TIJDLIJN ===== */
-.timeline-wrap{max-width:760px;margin:0 auto;padding:clamp(40px,8vw,90px) clamp(16px,5vw,28px);}
+.timeline-wrap{max-width:760px;margin:0 auto;padding:clamp(20px,3vw,34px) clamp(16px,5vw,28px) clamp(40px,8vw,90px);}
+/* compacte home-kop zodat de tijdlijn meteen in beeld komt */
+.home-hero .cover-count{margin-top:8px;}
+.home-hero .entries{margin-top:14px;gap:10px;}
+.home-hero .entry-card{min-width:0;padding:10px 16px;gap:10px;}
+.home-hero .entry-ic{font-size:1.1em;}
 .timeline{list-style:none;margin:0;padding:0;position:relative;}
 .timeline::before{content:"";position:absolute;left:71px;top:10px;bottom:10px;width:2px;background:linear-gradient(var(--gold-soft),var(--paper-edge));opacity:.55;}
 .tl-item{margin:0 0 20px;}
@@ -416,8 +421,10 @@ a{color:var(--pen);}
 .trash-top .thumbs-hint{margin:0;}
 
 /* ---------- NAMEN / WIE IS WIE ---------- */
-.names-wrap{max-width:1100px;margin:0 auto;padding:clamp(28px,5vw,64px) clamp(16px,5vw,40px) clamp(56px,9vw,110px);}
-.names-add{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:18px 0 4px;}
+.names-wrap{max-width:1100px;margin:0 auto;padding:clamp(20px,3vw,34px) clamp(16px,5vw,40px) clamp(56px,9vw,110px);}
+.names-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin:0 0 22px;padding-bottom:16px;border-bottom:1px solid var(--paper-edge);}
+.names-count{font-family:var(--meta);font-size:12px;color:var(--ink-soft);}
+.names-add{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0;margin-left:auto;}
 .names-add input[type=text]{flex:1 1 240px;max-width:340px;padding:9px 12px;border:1px solid var(--paper-edge);border-radius:6px;background:rgba(255,255,255,.7);font:inherit;color:var(--ink);}
 .names-add-hint{font-family:var(--meta);font-size:11px;color:var(--ink-soft);margin:0;}
 .face-grid{list-style:none;margin:0;padding:0;display:grid;gap:clamp(18px,3vw,34px);grid-template-columns:repeat(auto-fill,minmax(140px,1fr));}
@@ -537,3 +544,22 @@ a{color:var(--pen);}
 .review-assign{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;border-top:1px dashed var(--paper-edge);padding-top:12px;}
 .review-count{font-family:var(--meta);font-size:12px;color:var(--ink-soft);align-self:center;flex-basis:100%;}
 .dup-hint{display:block;font-family:var(--meta);font-size:11px;color:var(--stamp);margin-top:4px;}
+
+/* ===== Mobiel: menu's altijd bereikbaar (telefoon) ===== */
+@media (max-width:600px){
+  .pubnav{flex-wrap:wrap;gap:6px 8px;padding:8px 12px;}
+  .pubnav-brand{font-size:14px;padding-right:8px;}
+  .pubnav-account{order:2;margin-left:auto;gap:4px;flex-wrap:wrap;justify-content:flex-end;}
+  .pubnav-entries{order:3;width:100%;margin-left:0;flex-wrap:wrap;gap:2px 4px;}
+  .pubnav-entry{font-size:11px;letter-spacing:.05em;padding:6px 9px;}
+  .pubnav-account a,.pubnav-account .linkbtn{font-size:11px;letter-spacing:.05em;padding:6px 7px;}
+
+  .topbar{flex-wrap:wrap;gap:6px 12px;padding:10px 12px;}
+  .topbar-brand{padding-right:8px;}
+  .topbar-nav{order:3;width:100%;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;}
+
+  .home-hero .entries,.entries{gap:8px;}
+  .home-hero .entry-card,.entries .entry-card{min-width:0;flex:1 1 44%;}
+  .names-add{margin-left:0;width:100%;}
+  .names-add input[type=text]{flex:1 1 100%;}
+}
