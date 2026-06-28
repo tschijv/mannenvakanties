@@ -1421,10 +1421,11 @@ app.get('/beheer/techniek', requireLogin, requireAdmin, (req, res) => {
       { name: 'Geolocatie', detail: 'geoip-lite ' + (ver('geoip-lite') || '') + ' — offline, op stadsniveau, geen ruwe IP-adressen bewaard' },
       { name: 'Kaarten', detail: 'Leaflet 1.9.4 met kaartlagen van OpenStreetMap' },
     ]},
-    { title: 'E-mail (reactiemeldingen)', items: [
+    { title: 'E-mail', items: [
       { name: 'Verzending', detail: 'nodemailer ' + (ver('nodemailer') || '') },
       { name: 'Maildienst', detail: process.env.MAIL_SMTP_HOST ? (process.env.MAIL_SMTP_HOST + ' — ingesteld') : 'nog niet ingesteld' },
-      { name: 'Bestemming', detail: process.env.MAIL_TO || 'toine@freedom.nl' },
+      { name: 'Reactiemeldingen', detail: 'reacties op de site worden gemaild naar ' + (process.env.MAIL_TO || 'toine@freedom.nl') },
+      { name: 'Bericht aan leden', detail: 'elk ingelogd lid kan alle leden of een selectie mailen; ontvangers in BCC, antwoord gaat naar de afzender' },
     ]},
     { title: 'Vormgeving', items: [
       { name: 'Lettertypen', detail: 'Fraunces & Caveat (Google Fonts)' },
