@@ -1,0 +1,52 @@
+<%- include('partials/head', { title: 'Bericht aan leden — Beheer' }) %>
+<%- include('partials/topbar') %>
+
+<main class="beheer">
+  <p class="beheer-foot"><a href="/beheer">&larr; Terug naar beheer</a></p>
+  <header class="beheer-head">
+    <h1>Bericht aan leden</h1>
+    <p>Stuur een e-mail naar alle leden of een selectie. Antwoorden komen bij jou terecht<%= user && user.email ? ' (' + user.email + ')' : ' (stel je eigen e-mailadres in op het dashboard)' %>.</p>
+    <% if (!mailOn) { %><p class="muted">⚠ E-mail is nog niet ingesteld op de server — versturen lukt nu niet.</p><% } %>
+  </header>
+
+  <% if (!members.length) { %>
+    <section class="card">
+      <p class="muted">Nog geen leden met een e-mailadres. Leden kunnen hun adres invullen op het beheer-dashboard, of een beheerder vult ze in bij <a href="/beheer/leden">Leden</a>.</p>
+    </section>
+  <% } else { %>
+    <form method="post" action="/beheer/bericht" class="card bericht-form" onsubmit="return this.querySelectorAll('input[name=ids]:checked').length ? true : (alert('Kies minstens één ontvanger.'),false);">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+
+      <label class="field"><span>Onderwerp</span>
+        <input type="text" name="subject" value="<%= (values && values.subject) || '' %>" maxlength="150" required>
+      </label>
+      <label class="field"><span>Bericht</span>
+        <textarea name="message" rows="8" maxlength="8000" required placeholder="Typ hier je bericht aan de leden…"><%= (values && values.message) || '' %></textarea>
+      </label>
+
+      <div class="bericht-recipients">
+        <div class="bericht-rec-head">
+          <strong>Ontvangers</strong>
+          <span class="muted small"><a href="#" data-all>alle</a> · <a href="#" data-none>geen</a></span>
+          <% if (without) { %><span class="muted small"><%= without %> lid/leden zonder e-mailadres krijgen niets</span><% } %>
+        </div>
+        <ul class="rec-list">
+          <% members.forEach(function(m){ %>
+            <li><label><input type="checkbox" name="ids" value="<%= m.id %>" checked> <%= m.username %> <span class="muted">&lt;<%= m.email %>&gt;</span></label></li>
+          <% }) %>
+        </ul>
+      </div>
+
+      <div class="bericht-actions">
+        <button class="btn" type="submit"<%= mailOn ? '' : ' disabled' %>>Versturen</button>
+        <a class="btn ghost" href="/beheer">Annuleren</a>
+      </div>
+    </form>
+  <% } %>
+</main>
+
+<script>
+  document.querySelector('[data-all]') && document.querySelector('[data-all]').addEventListener('click', function(e){ e.preventDefault(); document.querySelectorAll('input[name=ids]').forEach(function(c){ c.checked = true; }); });
+  document.querySelector('[data-none]') && document.querySelector('[data-none]').addEventListener('click', function(e){ e.preventDefault(); document.querySelectorAll('input[name=ids]').forEach(function(c){ c.checked = false; }); });
+</script>
+<%- include('partials/foot') %>

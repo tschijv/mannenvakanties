@@ -18,7 +18,15 @@
     <p class="beheer-adminlinks">
       <a href="/namen">De mannen &amp; gezichten</a>
       <% if (typeof untaggedFaces !== 'undefined' && untaggedFaces) { %>&middot; <a href="/beheer/gezichten"><%= untaggedFaces %> gezicht<%= untaggedFaces === 1 ? '' : 'en' %> te benoemen</a><% } %>
+      &middot; <a href="/beheer/bericht">Bericht aan leden</a>
     </p>
+    <form method="post" action="/beheer/mijn-email" class="mijn-email">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <label>Jouw e-mailadres <em>(voor berichten aan leden)</em>
+        <input type="email" name="email" value="<%= user.email || '' %>" placeholder="jij@voorbeeld.nl" autocomplete="email">
+      </label>
+      <button class="linkbtn save" type="submit">Opslaan</button>
+    </form>
   </header>
 
   <section class="card">

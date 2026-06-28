@@ -13,6 +13,10 @@
         <input type="text" name="username" value="<%= values.username || '' %>" autocomplete="username" required autofocus>
       </label>
       <label class="field">
+        <span>E-mailadres <em>(optioneel, voor berichten van de groep)</em></span>
+        <input type="email" name="email" value="<%= values.email || '' %>" autocomplete="email">
+      </label>
+      <label class="field">
         <span>Wachtwoord <em>(min. 8 tekens)</em></span>
         <input type="password" name="password" autocomplete="new-password" required>
       </label>

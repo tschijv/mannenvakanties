@@ -61,6 +61,9 @@ ensureColumn('photos', 'deleted', 'INTEGER NOT NULL DEFAULT 0');
 ensureColumn('photos', 'deleted_at', 'TEXT');
 ensureColumn('photos', 'deleted_by', 'INTEGER');
 
+/* E-mailadres per lid (optioneel; voor berichten aan leden) */
+ensureColumn('users', 'email', 'TEXT');
+
 /* Coördinaten per jaar, voor de kaart-ingang (mogen leeg zijn) */
 ensureColumn('years', 'lat', 'REAL');
 ensureColumn('years', 'lng', 'REAL');

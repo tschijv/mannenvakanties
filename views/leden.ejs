@@ -10,11 +10,18 @@
 
   <section class="card">
     <table class="leden-table">
-      <thead><tr><th>Lid</th><th>Rol</th><th>Sinds</th><th></th></tr></thead>
+      <thead><tr><th>Lid</th><th>E-mail</th><th>Rol</th><th>Sinds</th><th></th></tr></thead>
       <tbody>
         <% users.forEach(function(u){ %>
           <tr>
             <td><%= u.username %><% if (u.id === user.id) { %> <span class="muted">(jij)</span><% } %></td>
+            <td>
+              <form method="post" action="/beheer/leden/<%= u.id %>/email" class="inline lid-email">
+                <input type="hidden" name="_csrf" value="<%= csrf %>">
+                <input type="email" name="email" value="<%= u.email || '' %>" placeholder="—" autocomplete="off">
+                <button class="linkbtn save" type="submit">✓</button>
+              </form>
+            </td>
             <td><%= u.role === 'admin' ? 'beheerder' : 'lid' %></td>
             <td class="muted"><%= u.created_at %></td>
             <td>

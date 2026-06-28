@@ -52,6 +52,22 @@ function mailer() {
   } catch (e) { _mailer = null; }
   return _mailer;
 }
+// Bericht aan (een selectie van) leden. Ontvangers in BCC zodat adressen niet zichtbaar zijn.
+async function sendMemberMail({ subject, text, recipients, replyTo }) {
+  const t = mailer();
+  if (!t) return false;
+  const from = process.env.MAIL_FROM || 'Mannenvakanties <noreply@mannenvakanties.nl>';
+  await t.sendMail({
+    from,
+    to: replyTo || process.env.MAIL_TO || from,
+    bcc: recipients,
+    replyTo: replyTo || undefined,
+    subject,
+    text
+  });
+  return true;
+}
+
 async function sendReactionMail(r) {
   const t = mailer();
   if (!t) return false;
@@ -131,7 +147,7 @@ app.use(session({
 /* huidige gebruiker + csrf-token beschikbaar in elke view */
 app.use((req, res, next) => {
   res.locals.user = req.session.userId
-    ? db.prepare('SELECT id, username, role FROM users WHERE id = ?').get(req.session.userId)
+    ? db.prepare('SELECT id, username, role, email FROM users WHERE id = ?').get(req.session.userId)
     : null;
   if (!req.session.csrf) req.session.csrf = crypto.randomBytes(24).toString('hex');
   res.locals.csrf = req.session.csrf;
@@ -424,6 +440,54 @@ app.post('/reageer', async (req, res) => {
   req.session.flash = { type: 'ok', msg: 'Bedankt voor je reactie!' };
   res.redirect('/reageer');
 });
+
+/* Bericht aan leden (per e-mail) — voor elk ingelogd lid */
+app.get('/beheer/bericht', requireLogin, (req, res) => {
+  const members = db.prepare("SELECT id, username, email FROM users ORDER BY username COLLATE NOCASE ASC").all();
+  const withEmail = members.filter((m) => m.email);
+  const without = members.length - withEmail.length;
+  res.render('bericht', { members: withEmail, without, mailOn: !!process.env.MAIL_SMTP_HOST, values: {} });
+});
+
+app.post('/beheer/bericht', requireLogin, async (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  if (!process.env.MAIL_SMTP_HOST) { req.session.flash = { type: 'err', msg: 'E-mail is nog niet ingesteld op de server.' }; return res.redirect('/beheer/bericht'); }
+  // lichte snelheidslimiet tegen misbruik
+  const now = Date.now();
+  if (req.session.lastBericht && now - req.session.lastBericht < 30000) {
+    req.session.flash = { type: 'info', msg: 'Even wachten — je hebt net een bericht verstuurd.' };
+    return res.redirect('/beheer/bericht');
+  }
+  const subject = (req.body.subject || '').trim().slice(0, 150);
+  const message = (req.body.message || '').trim().slice(0, 8000);
+  let ids = req.body.ids;
+  if (ids === undefined) ids = [];
+  else if (!Array.isArray(ids)) ids = [ids];
+  ids = ids.map((n) => parseInt(n, 10)).filter(Boolean);
+  if (!subject || message.length < 2) { req.session.flash = { type: 'err', msg: 'Vul een onderwerp en bericht in.' }; return res.render('bericht', renderBerichtData({ subject, message })); }
+  if (!ids.length) { req.session.flash = { type: 'err', msg: 'Kies minstens één ontvanger.' }; return res.render('bericht', renderBerichtData({ subject, message })); }
+  const recipients = db.prepare(
+    'SELECT email FROM users WHERE email IS NOT NULL AND email <> \'\' AND id IN (' + ids.map(() => '?').join(',') + ')'
+  ).all(...ids).map((r) => r.email);
+  if (!recipients.length) { req.session.flash = { type: 'err', msg: 'Geen ontvangers met een e-mailadres.' }; return res.redirect('/beheer/bericht'); }
+  const sender = res.locals.user;
+  const body = message + '\n\n— ' + (sender.username || 'een lid') + ', via mannenvakanties.nl';
+  try {
+    await sendMemberMail({ subject: subject, text: body, recipients, replyTo: sender.email || undefined });
+    req.session.lastBericht = now;
+    addLog(actor(res), 'bericht aan ' + recipients.length + ' lid/leden gestuurd: "' + subject + '"', 'beheer');
+    req.session.flash = { type: 'ok', msg: 'Bericht verstuurd naar ' + recipients.length + ' lid/leden.' };
+  } catch (e) {
+    console.error('Ledenmail mislukt:', e.message);
+    req.session.flash = { type: 'err', msg: 'Versturen mislukte: ' + e.message };
+  }
+  res.redirect('/beheer/bericht');
+});
+
+function renderBerichtData(values) {
+  const members = db.prepare("SELECT id, username, email FROM users ORDER BY username COLLATE NOCASE ASC").all().filter((m) => m.email);
+  return { members, without: 0, mailOn: !!process.env.MAIL_SMTP_HOST, values };
+}
 
 /* ------------------------------------------------------------------ */
 /*  Ingang op naam: personen + gezichten (alleen voor leden)           */
@@ -870,15 +934,17 @@ app.get('/aanmelden', (req, res) => res.render('register', { values: {}, error: 
 app.post('/aanmelden', (req, res) => {
   if (!checkCsrf(req, res)) return;
   const username = String(req.body.username || '').trim();
+  const email = String(req.body.email || '').trim().slice(0, 120);
   const password = String(req.body.password || '');
   const password2 = String(req.body.password2 || '');
   const answer = normAnswer(req.body.answer);
 
-  const fail = (error) => res.status(400).render('register', { values: { username }, error });
+  const fail = (error) => res.status(400).render('register', { values: { username, email }, error });
 
   if (answer !== JOIN_ANSWER) return fail('Dat is niet het juiste antwoord op de toegangsvraag. Vraag het anders even na bij de groep.');
   if (username.length < 3 || username.length > 40) return fail('Kies een gebruikersnaam van 3 tot 40 tekens.');
   if (!/^[\p{L}\p{N}._\- ]+$/u.test(username)) return fail('Gebruik alleen letters, cijfers, spatie, punt, streepje of underscore.');
+  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail('Vul een geldig e-mailadres in, of laat het leeg.');
   if (password.length < 8) return fail('Kies een wachtwoord van minstens 8 tekens.');
   if (password !== password2) return fail('De twee wachtwoorden zijn niet gelijk.');
 
@@ -888,8 +954,8 @@ app.post('/aanmelden', (req, res) => {
   const hash = bcrypt.hashSync(password, 12);
   const isFirst = db.prepare('SELECT COUNT(*) AS n FROM users').get().n === 0;
   const role = (isFirst || isDesignatedAdmin(username)) ? 'admin' : 'member';
-  const info = db.prepare('INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)')
-    .run(username, hash, role);
+  const info = db.prepare('INSERT INTO users (username, password_hash, role, email) VALUES (?, ?, ?, ?)')
+    .run(username, hash, role, email || null);
 
   req.session.userId = info.lastInsertRowid;
   addLog(username, 'is lid geworden' + (role === 'admin' ? ' (beheerder)' : ''), 'lid');
@@ -1274,8 +1340,27 @@ app.post('/beheer/prullenbak/leegmaken', requireLogin, requireAdmin, (req, res) 
 
 /* ----- Leden (alleen admin): beheerders aanwijzen ----- */
 app.get('/beheer/leden', requireLogin, requireAdmin, (req, res) => {
-  const users = db.prepare('SELECT id, username, role, created_at FROM users ORDER BY created_at ASC, id ASC').all();
+  const users = db.prepare('SELECT id, username, role, email, created_at FROM users ORDER BY created_at ASC, id ASC').all();
   res.render('leden', { users });
+});
+
+// Beheerder stelt het e-mailadres van een lid in/bij.
+app.post('/beheer/leden/:id/email', requireLogin, requireAdmin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const email = (req.body.email || '').trim().slice(0, 120);
+  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { req.session.flash = { type: 'err', msg: 'Ongeldig e-mailadres.' }; return res.redirect('/beheer/leden'); }
+  db.prepare('UPDATE users SET email = ? WHERE id = ?').run(email || null, req.params.id);
+  res.redirect('/beheer/leden');
+});
+
+// Lid stelt zijn eigen e-mailadres in (zichtbaar op het beheer-dashboard).
+app.post('/beheer/mijn-email', requireLogin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  const email = (req.body.email || '').trim().slice(0, 120);
+  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { req.session.flash = { type: 'err', msg: 'Ongeldig e-mailadres.' }; return res.redirect('/beheer'); }
+  db.prepare('UPDATE users SET email = ? WHERE id = ?').run(email || null, res.locals.user.id);
+  req.session.flash = { type: 'ok', msg: email ? 'E-mailadres opgeslagen.' : 'E-mailadres gewist.' };
+  res.redirect('/beheer');
 });
 
 /* Reacties (alleen admin): lezen en verwijderen */

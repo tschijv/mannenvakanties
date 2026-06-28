@@ -586,3 +586,20 @@ a{color:var(--pen);}
 .reactie-mailed{color:var(--pen);}
 .reactie-del{margin:0 0 0 auto;}
 .reactie-msg{margin:6px 0 0;white-space:pre-wrap;line-height:1.5;}
+
+/* ===== Bericht aan leden + e-mailadres ===== */
+.mijn-email{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:6px;font-family:var(--meta);font-size:12px;color:var(--ink-soft);}
+.mijn-email label{display:flex;flex-wrap:wrap;align-items:center;gap:6px;}
+.mijn-email input[type=email]{padding:6px 9px;border:1px solid var(--paper-edge);border-radius:5px;font:inherit;min-width:200px;}
+.lid-email{display:flex;align-items:center;gap:4px;margin:0;}
+.lid-email input[type=email]{padding:4px 7px;border:1px solid var(--paper-edge);border-radius:5px;font:inherit;font-size:12px;min-width:150px;}
+.bericht-form{display:flex;flex-direction:column;gap:14px;}
+.bericht-form .field{display:flex;flex-direction:column;gap:5px;}
+.bericht-form .field>span{font-family:var(--meta);font-size:12px;letter-spacing:.04em;color:var(--ink-soft);}
+.bericht-form input[type=text],.bericht-form textarea{width:100%;padding:9px 11px;border:1px solid var(--paper-edge);border-radius:6px;background:rgba(255,255,255,.7);font:inherit;color:var(--ink);}
+.bericht-form textarea{resize:vertical;min-height:140px;}
+.bericht-recipients{border:1px solid var(--paper-edge);border-radius:8px;padding:12px 14px;}
+.bericht-rec-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-bottom:8px;}
+.rec-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px 14px;}
+.rec-list label{display:flex;align-items:center;gap:7px;cursor:pointer;}
+.bericht-actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
