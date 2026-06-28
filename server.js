@@ -1291,6 +1291,63 @@ app.post('/beheer/reacties/:id/verwijderen', requireLogin, requireAdmin, (req, r
   res.redirect('/beheer/reacties');
 });
 
+/* Techniek & diensten (alleen admin): overzicht van de gebruikte software (zonder sleutels) */
+app.get('/beheer/techniek', requireLogin, requireAdmin, (req, res) => {
+  const ver = (n) => {
+    try { return require(n + '/package.json').version; } catch (e) { /* exports kan dit blokkeren */ }
+    try { return JSON.parse(fs.readFileSync(path.join(__dirname, 'node_modules', n, 'package.json'), 'utf8')).version; } catch (e) { return null; }
+  };
+  const appPkg = require('./package.json');
+  const dbDriver = (db && db.driver === 'node:sqlite') ? 'node:sqlite (ingebouwd in Node)' : 'better-sqlite3 ' + (ver('better-sqlite3') || '');
+  const groups = [
+    { title: 'Server & hosting', items: [
+      { name: 'Node.js', detail: process.version },
+      { name: 'Besturingssysteem', detail: process.platform + ' / ' + process.arch },
+      { name: 'Webserver / proxy', detail: 'nginx (reverse proxy) met HTTPS via Let’s Encrypt' },
+      { name: 'Procesbeheer', detail: 'systemd-service (herstart automatisch, installeert updates bij start)' },
+      { name: 'Uitrollen', detail: 'Git: push → de server haalt het zelf op (auto-pull)' },
+    ]},
+    { title: 'Applicatie', items: [
+      { name: 'Webframework', detail: 'Express ' + (ver('express') || '') },
+      { name: 'Templates', detail: 'EJS ' + (ver('ejs') || '') },
+      { name: 'App-versie', detail: appPkg.version },
+    ]},
+    { title: 'Database', items: [
+      { name: 'Opslag', detail: 'SQLite — ' + dbDriver },
+      { name: 'Locatie', detail: 'bestand op de server (data/app.db), incl. dagelijkse back-upmogelijkheid' },
+    ]},
+    { title: 'Accounts & beveiliging', items: [
+      { name: 'Sessies', detail: 'express-session ' + (ver('express-session') || '') + ' met eigen SQLite-sessieopslag' },
+      { name: 'Wachtwoorden', detail: 'bcryptjs ' + (ver('bcryptjs') || '') + ' (versleuteld opgeslagen, nooit leesbaar)' },
+      { name: 'Formulieren', detail: 'CSRF-tokens tegen misbruik' },
+      { name: 'Spam/bots', detail: 'honeypot + herkenning van crawlers (User-Agent)' },
+    ]},
+    { title: 'Foto’s', items: [
+      { name: 'Uploaden', detail: 'multer ' + (ver('multer') || '') },
+      { name: 'Thumbnails / beeldbewerking', detail: 'sharp ' + (ver('sharp') || '') },
+      { name: 'Downloaden (zip)', detail: 'archiver ' + (ver('archiver') || '') },
+    ]},
+    { title: 'Gezichten (“De mannen”)', items: [
+      { name: 'Gezichtsdetectie', detail: 'TensorFlow.js ' + (ver('@tensorflow/tfjs') || '') + ' (WASM) + @vladmandic/face-api ' + (ver('@vladmandic/face-api') || '') },
+      { name: 'Beeld inlezen', detail: 'jpeg-js ' + (ver('jpeg-js') || '') },
+      { name: 'Privacy', detail: 'detectie draait op de eigen server; geen externe AI-dienst' },
+    ]},
+    { title: 'Herkomst & kaarten', items: [
+      { name: 'Geolocatie', detail: 'geoip-lite ' + (ver('geoip-lite') || '') + ' — offline, op stadsniveau, geen ruwe IP-adressen bewaard' },
+      { name: 'Kaarten', detail: 'Leaflet 1.9.4 met kaartlagen van OpenStreetMap' },
+    ]},
+    { title: 'E-mail (reactiemeldingen)', items: [
+      { name: 'Verzending', detail: 'nodemailer ' + (ver('nodemailer') || '') },
+      { name: 'Maildienst', detail: process.env.MAIL_SMTP_HOST ? (process.env.MAIL_SMTP_HOST + ' — ingesteld') : 'nog niet ingesteld' },
+      { name: 'Bestemming', detail: process.env.MAIL_TO || 'toine@freedom.nl' },
+    ]},
+    { title: 'Vormgeving', items: [
+      { name: 'Lettertypen', detail: 'Fraunces & Caveat (Google Fonts)' },
+    ]},
+  ];
+  res.render('techniek', { groups });
+});
+
 /* Logboek (alleen admin): wie deed wat, wanneer, vanwaar */
 app.get('/beheer/logboek', requireLogin, requireAdmin, (req, res) => {
   const logs = db.prepare('SELECT created_at, username, event, country, city FROM logs ORDER BY id DESC LIMIT 300').all();
