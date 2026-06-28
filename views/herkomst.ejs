@@ -3,7 +3,7 @@
 <%- include('partials/topbar') %>
 
 <main class="beheer">
-  <p class="beheer-foot"><a href="/beheer/statistieken">&larr; Statistieken</a> &middot; <a href="/beheer/logboek">Logboek</a></p>
+  <p class="beheer-foot"><a href="/beheer/statistieken">&larr; Statistieken</a> &middot; <a href="/beheer/bezoekers">Anonieme bezoekers</a> &middot; <a href="/beheer/logboek">Logboek</a></p>
   <header class="beheer-head">
     <h1>Herkomst van bezoekers</h1>
     <p>Afgeleid uit het IP-adres (op stadsniveau) — we bewaren geen ruwe IP-adressen. <strong><%= located %></strong> bezoeken met een locatie<% if (unlocated) { %>, <%= unlocated %> zonder (lokaal netwerk of onbekend)<% } %>.</p>

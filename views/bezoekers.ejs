@@ -1,0 +1,44 @@
+<%- include('partials/head', { title: 'Anonieme bezoekers — Beheer' }) %>
+<%- include('partials/topbar') %>
+
+<main class="beheer">
+  <p class="beheer-foot"><a href="/beheer/statistieken">&larr; Statistieken</a> &middot; <a href="/beheer/herkomst">Herkomst op de kaart</a></p>
+  <header class="beheer-head">
+    <h1>Anonieme bezoekers</h1>
+    <p>Bezoekers die niet ingelogd zijn, geteld per apparaat (via een anonieme cookie). <strong><%= totals.unique %></strong> unieke bezoekers, <strong><%= totals.views %></strong> weergaves, waarvan <%= totals.geo %> met een herkenbare herkomst.</p>
+    <p class="muted small">Let op: veel eenmalige bezoekers (één weergave, vaak uit de VS/India) zijn waarschijnlijk zoekmachines of scrapers, niet echte mensen. De herkomst wordt pas sinds 26 juni vastgelegd.</p>
+  </header>
+
+  <section class="card">
+    <% if (visitors.length) { %>
+      <table class="leden-table">
+        <thead><tr><th>Herkomst</th><th>Weergaves</th><th>Eerste bezoek</th><th>Laatste bezoek</th></tr></thead>
+        <tbody>
+          <% visitors.forEach(function(v){ %>
+            <tr>
+              <td><%= v.herkomst || '—' %></td>
+              <td><%= v.views %></td>
+              <td class="muted log-time" data-utc="<%= v.first_seen %>"><%= v.first_seen %></td>
+              <td class="muted log-time" data-utc="<%= v.last_seen %>"><%= v.last_seen %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      <% if (totals.unique > visitors.length) { %>
+        <p class="muted small">De <%= visitors.length %> meest recente bezoekers worden getoond.</p>
+      <% } %>
+    <% } else { %>
+      <p class="muted">Nog geen anonieme bezoekers geteld.</p>
+    <% } %>
+  </section>
+</main>
+
+<script>
+  // Tijden staan in UTC; toon ze in Nederlandse tijd.
+  document.querySelectorAll('.log-time').forEach(function (el) {
+    var raw = el.getAttribute('data-utc'); if (!raw) return;
+    var d = new Date(raw.replace(' ', 'T') + 'Z');
+    if (!isNaN(d)) el.textContent = d.toLocaleString('nl-NL', { dateStyle: 'medium', timeStyle: 'short' });
+  });
+</script>
+<%- include('partials/foot') %>

@@ -1155,6 +1155,22 @@ app.get('/beheer/logboek', requireLogin, requireAdmin, (req, res) => {
   res.render('logboek', { logs });
 });
 
+/* Anonieme bezoekers met hun herkomst (alleen admin) */
+app.get('/beheer/bezoekers', requireLogin, requireAdmin, (req, res) => {
+  const visitors = db.prepare(
+    'SELECT visitor, COUNT(*) AS views, MIN(created_at) AS first_seen, MAX(created_at) AS last_seen, ' +
+    'MAX(country) AS country, MAX(city) AS city ' +
+    'FROM visits WHERE username IS NULL AND visitor IS NOT NULL ' +
+    'GROUP BY visitor ORDER BY last_seen DESC LIMIT 500'
+  ).all().map((v) => Object.assign(v, { herkomst: [v.city, countryName(v.country)].filter(Boolean).join(', ') }));
+  const totals = {
+    views: db.prepare('SELECT COUNT(*) AS n FROM visits WHERE username IS NULL').get().n,
+    unique: db.prepare('SELECT COUNT(DISTINCT visitor) AS n FROM visits WHERE username IS NULL AND visitor IS NOT NULL').get().n,
+    geo: db.prepare("SELECT COUNT(DISTINCT visitor) AS n FROM visits WHERE username IS NULL AND country IS NOT NULL AND country <> ''").get().n,
+  };
+  res.render('bezoekers', { visitors, totals });
+});
+
 /* Herkomst van bezoekers op de kaart (alleen admin) */
 app.get('/beheer/herkomst', requireLogin, requireAdmin, (req, res) => {
   const places = db.prepare(
