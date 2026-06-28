@@ -8,6 +8,7 @@
     <% if (user) { %><a href="/namen" class="pubnav-entry<%= (typeof active !== 'undefined' && active === 'namen') ? ' is-active' : '' %>">Namen</a><% } %>
   </div>
   <div class="pubnav-account">
+    <a class="pubnav-react" href="mailto:toine@freedom.nl?subject=Reactie%20op%20Mannenvakanties&body=Hoi%20Toine%2C%0A%0A">Reageer</a>
     <% if (user) { %>
       <a href="/beheer">Beheer</a>
       <form method="post" action="/uitloggen" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="linkbtn">Uitloggen</button></form>
