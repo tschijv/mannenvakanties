@@ -1,18 +1,15 @@
 <nav class="pubnav">
   <a class="pubnav-brand" href="/">Mannenvakanties</a>
-  <div class="pubnav-entries">
-    <a href="/" class="pubnav-entry<%= (typeof active !== 'undefined' && active === 'tijdlijn') ? ' is-active' : '' %>">Tijdlijn</a>
-    <a href="/groepsfotos" class="pubnav-entry<%= (typeof active !== 'undefined' && active === 'groep') ? ' is-active' : '' %>">Groepsfoto's</a>
-    <a href="/kaart" class="pubnav-entry<%= (typeof active !== 'undefined' && active === 'kaart') ? ' is-active' : '' %>">Kaart</a>
-    <a href="/namen" class="pubnav-entry<%= (typeof active !== 'undefined' && active === 'namen') ? ' is-active' : '' %>">De mannen</a>
-    <% if (user) { %><a href="/recent" class="pubnav-entry<%= (typeof active !== 'undefined' && active === 'recent') ? ' is-active' : '' %>">Recent</a><% } %>
-  </div>
+  <input type="checkbox" id="mvnav" class="nav-toggle" hidden>
+  <label for="mvnav" class="nav-burger" aria-label="Menu">☰</label>
   <div class="pubnav-account">
-    <a class="pubnav-react" href="mailto:toine@freedom.nl?subject=Reactie%20op%20Mannenvakanties&body=Hoi%20Toine%2C%0A%0A">Reageer</a>
     <% if (user) { %>
+      <a href="/recent" class="<%= (typeof active !== 'undefined' && active === 'recent') ? 'is-active' : '' %>">Recent</a>
       <a href="/beheer">Beheer</a>
+      <a class="pubnav-react" href="mailto:toine@freedom.nl?subject=Reactie%20op%20Mannenvakanties&body=Hoi%20Toine%2C%0A%0A">Reageer</a>
       <form method="post" action="/uitloggen" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="linkbtn">Uitloggen</button></form>
     <% } else { %>
+      <a class="pubnav-react" href="mailto:toine@freedom.nl?subject=Reactie%20op%20Mannenvakanties&body=Hoi%20Toine%2C%0A%0A">Reageer</a>
       <a href="/inloggen">Inloggen</a>
       <a href="/aanmelden" class="cta">Lid worden</a>
     <% } %>
