@@ -1,0 +1,37 @@
+<%- include('partials/head', { title: 'Reageer — Mannenvakanties' }) %>
+<%- include('partials/pubnav', { active: 'reageer' }) %>
+
+<header class="cover cover-slim">
+  <div class="cover-frame">
+    <h1>Reageer</h1>
+    <p class="tagline">Een herinnering, een naam bij een gezicht, of gewoon een groet — laat het weten.</p>
+  </div>
+</header>
+
+<main class="reageer-wrap">
+  <form method="post" action="/reageer" class="reageer-form card">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <!-- honeypot tegen bots; mensen zien dit niet -->
+    <div class="hp" aria-hidden="true"><label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+
+    <label class="field"><span>Je naam</span>
+      <input type="text" name="name" value="<%= (values && values.name) || '' %>" maxlength="80" autocomplete="name">
+    </label>
+    <label class="field"><span>E-mail <em>(optioneel, als je antwoord wilt)</em></span>
+      <input type="email" name="email" value="<%= (values && values.email) || '' %>" maxlength="120" autocomplete="email">
+    </label>
+    <label class="field"><span>Je bericht</span>
+      <textarea name="message" rows="6" maxlength="4000" required placeholder="Schrijf hier je reactie…"><%= (values && values.message) || '' %></textarea>
+    </label>
+    <div class="reageer-actions">
+      <button class="btn" type="submit">Versturen</button>
+      <a class="btn ghost" href="/">Terug naar het album</a>
+    </div>
+  </form>
+</main>
+
+<footer class="colophon">
+  <p class="mark">M&middot;V</p>
+  <p>Mannenvakanties — het album</p>
+</footer>
+<%- include('partials/foot') %>

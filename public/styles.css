@@ -568,3 +568,21 @@ a{color:var(--pen);}
   .names-add{margin-left:0;width:100%;}
   .names-add input[type=text]{flex:1 1 100%;}
 }
+
+/* ===== Reactieformulier + reacties ===== */
+.reageer-wrap{max-width:640px;margin:0 auto;padding:clamp(20px,3vw,34px) clamp(16px,5vw,28px) clamp(40px,7vw,80px);}
+.reageer-form{display:flex;flex-direction:column;gap:14px;}
+.reageer-form .field{display:flex;flex-direction:column;gap:5px;}
+.reageer-form .field>span{font-family:var(--meta);font-size:12px;letter-spacing:.04em;color:var(--ink-soft);}
+.reageer-form input[type=text],.reageer-form input[type=email],.reageer-form textarea{width:100%;padding:9px 11px;border:1px solid var(--paper-edge);border-radius:6px;background:rgba(255,255,255,.7);font:inherit;color:var(--ink);}
+.reageer-form textarea{resize:vertical;min-height:120px;}
+.reageer-actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:4px;}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;}
+
+.reactie-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px;}
+.reactie{border-bottom:1px dashed var(--paper-edge);padding-bottom:14px;}
+.reactie-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;font-size:.92rem;}
+.reactie-head .log-time{font-family:var(--meta);font-size:11.5px;}
+.reactie-mailed{color:var(--pen);}
+.reactie-del{margin:0 0 0 auto;}
+.reactie-msg{margin:6px 0 0;white-space:pre-wrap;line-height:1.5;}

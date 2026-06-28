@@ -1,0 +1,46 @@
+<%- include('partials/head', { title: 'Reacties — Beheer' }) %>
+<%- include('partials/topbar') %>
+
+<main class="beheer">
+  <p class="beheer-foot"><a href="/beheer">&larr; Terug naar beheer</a></p>
+  <header class="beheer-head">
+    <h1>Reacties</h1>
+    <p>Berichten die bezoekers via het reactieformulier achterlieten.
+      <% if (mailOn) { %>Er wordt ook een e-mail verstuurd bij elke reactie.<% } else { %><span class="muted">E-mailmelding staat uit — zet SMTP-gegevens in de service om mails te ontvangen; reacties worden hoe dan ook hier bewaard.</span><% } %>
+    </p>
+  </header>
+
+  <section class="card">
+    <% if (reacties.length) { %>
+      <ul class="reactie-list">
+        <% reacties.forEach(function(r){ %>
+          <li class="reactie">
+            <div class="reactie-head">
+              <strong><%= r.name || 'Anoniem' %></strong>
+              <% if (r.email) { %><a href="mailto:<%= r.email %>" class="muted"><%= r.email %></a><% } %>
+              <span class="muted log-time" data-utc="<%= r.created_at %>"><%= r.created_at %></span>
+              <% if (r.herkomst) { %><span class="muted">· <%= r.herkomst %></span><% } %>
+              <% if (r.emailed) { %><span class="reactie-mailed" title="Per e-mail gemeld">✉</span><% } %>
+              <form method="post" action="/beheer/reacties/<%= r.id %>/verwijderen" class="reactie-del" onsubmit="return confirm('Deze reactie verwijderen?');">
+                <input type="hidden" name="_csrf" value="<%= csrf %>">
+                <button class="linkbtn danger" type="submit">verwijderen</button>
+              </form>
+            </div>
+            <p class="reactie-msg"><%= r.message %></p>
+          </li>
+        <% }) %>
+      </ul>
+    <% } else { %>
+      <p class="muted">Nog geen reacties.</p>
+    <% } %>
+  </section>
+</main>
+
+<script>
+  document.querySelectorAll('.log-time').forEach(function (el) {
+    var raw = el.getAttribute('data-utc'); if (!raw) return;
+    var d = new Date(raw.replace(' ', 'T') + 'Z');
+    if (!isNaN(d)) el.textContent = d.toLocaleString('nl-NL', { dateStyle: 'medium', timeStyle: 'short' });
+  });
+</script>
+<%- include('partials/foot') %>

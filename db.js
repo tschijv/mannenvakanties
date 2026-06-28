@@ -152,6 +152,21 @@ ensureColumn('logs', 'city', 'TEXT');
 ensureColumn('visits', 'is_bot', 'INTEGER NOT NULL DEFAULT 0');
 ensureColumn('visits', 'bot_name', 'TEXT');
 
+/* Reacties van bezoekers (opgeslagen; optioneel ook per e-mail gemeld) */
+db.exec(`
+CREATE TABLE IF NOT EXISTS reactions (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  name       TEXT NOT NULL DEFAULT '',
+  email      TEXT,
+  message    TEXT NOT NULL,
+  country    TEXT,
+  city       TEXT,
+  visitor    TEXT,
+  emailed    INTEGER NOT NULL DEFAULT 0
+);
+`);
+
 /* Video's (YouTube-links) per jaar */
 db.exec(`
 CREATE TABLE IF NOT EXISTS videos (

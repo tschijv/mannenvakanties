@@ -33,6 +33,41 @@ function countryName(iso) {
   catch (e) { return iso; }
 }
 
+// E-mailmelding via SMTP (env). Geen config -> netjes overslaan (reactie blijft wel bewaard).
+// Zet in de service: MAIL_SMTP_HOST, MAIL_SMTP_PORT, MAIL_SMTP_USER, MAIL_SMTP_PASS,
+// evt. MAIL_SMTP_SECURE=1, MAIL_TO (standaard toine@freedom.nl), MAIL_FROM.
+let _mailer, _mailerTried = false;
+function mailer() {
+  if (_mailerTried) return _mailer;
+  _mailerTried = true;
+  if (!process.env.MAIL_SMTP_HOST) { _mailer = null; return null; }
+  try {
+    const nodemailer = require('nodemailer');
+    _mailer = nodemailer.createTransport({
+      host: process.env.MAIL_SMTP_HOST,
+      port: Number(process.env.MAIL_SMTP_PORT || 587),
+      secure: String(process.env.MAIL_SMTP_SECURE || '') === '1',
+      auth: process.env.MAIL_SMTP_USER ? { user: process.env.MAIL_SMTP_USER, pass: process.env.MAIL_SMTP_PASS } : undefined
+    });
+  } catch (e) { _mailer = null; }
+  return _mailer;
+}
+async function sendReactionMail(r) {
+  const t = mailer();
+  if (!t) return false;
+  const to = process.env.MAIL_TO || 'toine@freedom.nl';
+  const from = process.env.MAIL_FROM || 'Mannenvakanties <noreply@mannenvakanties.nl>';
+  await t.sendMail({
+    to, from,
+    replyTo: r.email || undefined,
+    subject: 'Nieuwe reactie op Mannenvakanties',
+    text: 'Van: ' + (r.name || 'onbekend') + (r.email ? ' <' + r.email + '>' : '') + '\n' +
+          (r.herkomst ? 'Herkomst: ' + r.herkomst + '\n' : '') + '\n' +
+          r.message + '\n\n— via mannenvakanties.nl'
+  });
+  return true;
+}
+
 const app = express();
 app.locals.ASSET_VER = String(Date.now()); // verandert bij elke (her)start, dwingt verse CSS/JS af
 const PORT = process.env.PORT || 3000;
@@ -354,6 +389,40 @@ app.get('/groepsfotos', (req, res) => {
 app.get('/recent', (req, res) => {
   const changes = db.prepare("SELECT created_at, username, event FROM logs WHERE kind IN ('content','lid') ORDER BY id DESC LIMIT 100").all();
   res.render('recent', { changes });
+});
+
+/* Reactieformulier (openbaar): opslaan + (indien ingesteld) e-mailmelding */
+app.get('/reageer', (req, res) => {
+  res.render('reageer', { values: {} });
+});
+
+app.post('/reageer', async (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  // honeypot: bots vullen dit verborgen veld -> stilletjes negeren
+  if ((req.body.website || '').trim()) { req.session.flash = { type: 'ok', msg: 'Bedankt voor je reactie!' }; return res.redirect('/reageer'); }
+  // snelheidslimiet: niet vaker dan eens per 20 sec per sessie
+  const now = Date.now();
+  if (req.session.lastReact && now - req.session.lastReact < 20000) {
+    req.session.flash = { type: 'info', msg: 'Je reactie is net verstuurd — bedankt!' };
+    return res.redirect('/reageer');
+  }
+  const name = (req.body.name || '').trim().slice(0, 80);
+  const email = (req.body.email || '').trim().slice(0, 120);
+  const message = (req.body.message || '').trim().slice(0, 4000);
+  if (message.length < 2) {
+    req.session.flash = { type: 'err', msg: 'Vul nog even een bericht in.' };
+    return res.render('reageer', { values: { name, email, message } });
+  }
+  const g = res.locals.geo;
+  const info = db.prepare('INSERT INTO reactions (name, email, message, country, city, visitor) VALUES (?, ?, ?, ?, ?, ?)')
+    .run(name, email || null, message, g ? g.country : null, g ? g.city : null, readCookie(req, 'mv_vid') || null);
+  req.session.lastReact = now;
+  addLog(name || 'gast', 'liet een reactie achter', 'content');
+  const r = { name, email, message, herkomst: [g ? g.city : null, countryName(g ? g.country : null)].filter(Boolean).join(', ') };
+  try { if (await sendReactionMail(r)) db.prepare('UPDATE reactions SET emailed = 1 WHERE id = ?').run(info.lastInsertRowid); }
+  catch (e) { console.error('Reactie-mail mislukt:', e.message); /* reactie is al opgeslagen */ }
+  req.session.flash = { type: 'ok', msg: 'Bedankt voor je reactie!' };
+  res.redirect('/reageer');
 });
 
 /* ------------------------------------------------------------------ */
@@ -868,7 +937,8 @@ app.get('/beheer', requireLogin, (req, res) => {
     'FROM years y ORDER BY y.year ASC, y.id ASC'
   ).all();
   const trashCount = db.prepare('SELECT COUNT(*) AS n FROM photos WHERE deleted = 1').get().n;
-  res.render('beheer', { years, trashCount, untaggedFaces: untaggedFaceCount() });
+  const reactionCount = db.prepare('SELECT COUNT(*) AS n FROM reactions').get().n;
+  res.render('beheer', { years, trashCount, untaggedFaces: untaggedFaceCount(), reactionCount });
 });
 
 /* Eén jaar: pas hier worden de foto's getoond */
@@ -1206,6 +1276,19 @@ app.post('/beheer/prullenbak/leegmaken', requireLogin, requireAdmin, (req, res) 
 app.get('/beheer/leden', requireLogin, requireAdmin, (req, res) => {
   const users = db.prepare('SELECT id, username, role, created_at FROM users ORDER BY created_at ASC, id ASC').all();
   res.render('leden', { users });
+});
+
+/* Reacties (alleen admin): lezen en verwijderen */
+app.get('/beheer/reacties', requireLogin, requireAdmin, (req, res) => {
+  const reacties = db.prepare('SELECT * FROM reactions ORDER BY id DESC LIMIT 500').all()
+    .map((r) => Object.assign(r, { herkomst: [r.city, countryName(r.country)].filter(Boolean).join(', ') }));
+  const mailOn = !!process.env.MAIL_SMTP_HOST;
+  res.render('reacties', { reacties, mailOn });
+});
+app.post('/beheer/reacties/:id/verwijderen', requireLogin, requireAdmin, (req, res) => {
+  if (!checkCsrf(req, res)) return;
+  db.prepare('DELETE FROM reactions WHERE id = ?').run(req.params.id);
+  res.redirect('/beheer/reacties');
 });
 
 /* Logboek (alleen admin): wie deed wat, wanneer, vanwaar */
