@@ -376,6 +376,31 @@ app.get('/thumb/:id', async (req, res) => {
   }
 });
 
+/* Grote variant voor de homepage-achtergrond (1600px, EXIF-stand rechtgezet) */
+app.get('/hero/:id', async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!id) return res.status(404).end();
+  const p = db.prepare('SELECT src FROM photos WHERE id = ? AND deleted = 0').get(id);
+  if (!p) return res.status(404).end();
+  const cache = path.join(THUMB_DIR, 'hero-' + id + '.jpg');
+  if (fs.existsSync(cache)) {
+    res.setHeader('Cache-Control', 'public, max-age=2592000');
+    return res.sendFile(cache);
+  }
+  if (!sharp) return res.redirect(p.src);
+  try {
+    let buf;
+    if (p.src.startsWith('/uploads/')) buf = fs.readFileSync(path.join(DATA_DIR, p.src.replace(/^\//, '')));
+    else { const r = await fetch(p.src); if (!r.ok) throw new Error('HTTP ' + r.status); buf = Buffer.from(await r.arrayBuffer()); }
+    const out = await sharp(buf).rotate().flatten({ background: '#000000' }).resize({ width: 1600, withoutEnlargement: true }).jpeg({ quality: 70 }).toBuffer();
+    try { fs.writeFileSync(cache, out); } catch (e) { /* cache mag falen */ }
+    res.setHeader('Cache-Control', 'public, max-age=2592000');
+    res.type('jpeg').send(out);
+  } catch (e) {
+    res.redirect(p.src);
+  }
+});
+
 /* ------------------------------------------------------------------ */
 /*  Publieke ingangen: tijdlijn, kaart, en losse jaar-pagina's         */
 /* ------------------------------------------------------------------ */

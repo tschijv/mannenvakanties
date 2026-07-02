@@ -1,7 +1,13 @@
 <%- include('partials/head', { title: 'Mannenvakanties — tijdlijn' }) %>
 <%- include('partials/pubnav', { active: 'tijdlijn' }) %>
 
+<%
+  // filmische kop: elke dag een andere foto uit het album als achtergrond
+  var heroYears = years.filter(function (y) { return y.cover_id; });
+  var heroPick = heroYears.length ? heroYears[(new Date().getDate() + heroYears.length) % heroYears.length] : null;
+%>
 <header class="cover cover-slim home-hero">
+  <% if (heroPick) { %><div class="hero-bg" style="background-image:url('/hero/<%= heroPick.cover_id %>')" aria-hidden="true"></div><% } %>
   <div class="cover-frame">
     <h1>Mannen&shy;vakanties</h1>
     <% if (years.length) { %>

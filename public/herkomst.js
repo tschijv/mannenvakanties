@@ -26,7 +26,7 @@
     var html = '<b>' + safe + '</b><br>' + p.views + ' weergave' + (p.views === 1 ? '' : 's') +
       ' · ' + p.visitors + ' bezoeker' + (p.visitors === 1 ? '' : 's');
     L.circleMarker([p.lat, p.lng], {
-      radius: radius, color: '#9c3b2e', weight: 1.5, fillColor: '#b48a4b', fillOpacity: 0.55
+      radius: radius, color: '#f4a83a', weight: 1.5, fillColor: '#f8c778', fillOpacity: 0.55
     }).addTo(map).bindPopup(html, { className: 'mv-popup' });
   });
 
