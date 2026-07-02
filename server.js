@@ -401,6 +401,25 @@ app.get('/hero/:id', async (req, res) => {
   }
 });
 
+/* Achtergrondfoto voor paginakoppen: elke dag een andere, en per pagina
+   een verschillende (op basis van het pad), gekozen uit de jaarcovers. */
+app.use((req, res, next) => {
+  res.locals.pageHeroId = null;
+  if (req.method === 'GET') {
+    try {
+      const ids = db.prepare(
+        'SELECT (SELECT p.id FROM photos p WHERE p.year_id = y.id AND p.deleted = 0 ORDER BY p.sort ASC, p.id ASC LIMIT 1) AS cid FROM years y ORDER BY y.year'
+      ).all().map((r) => r.cid).filter(Boolean);
+      if (ids.length) {
+        let h = new Date().getDate();
+        for (const ch of req.path) h = (h * 31 + ch.charCodeAt(0)) % 9973;
+        res.locals.pageHeroId = ids[h % ids.length];
+      }
+    } catch (e) { /* kop zonder foto is ook prima */ }
+  }
+  next();
+});
+
 /* ------------------------------------------------------------------ */
 /*  Publieke ingangen: tijdlijn, kaart, en losse jaar-pagina's         */
 /* ------------------------------------------------------------------ */

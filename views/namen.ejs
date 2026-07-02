@@ -1,7 +1,8 @@
 <%- include('partials/head', { title: 'De mannen — Mannenvakanties' }) %>
 <%- include('partials/pubnav', { active: 'namen' }) %>
 
-<header class="cover cover-slim">
+<header class="cover cover-slim page-hero">
+  <% if (typeof pageHeroId !== 'undefined' && pageHeroId) { %><div class="hero-bg" style="background-image:url('/hero/<%= pageHeroId %>')" aria-hidden="true"></div><% } %>
   <div class="cover-frame">
     <h1>De mannen</h1>
     <p class="tagline">Wie is wie, door de jaren heen — klik een gezicht voor alle foto's.</p>

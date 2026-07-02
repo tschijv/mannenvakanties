@@ -1,7 +1,8 @@
 <%- include('partials/head', { title: 'Groepsfoto\'s — Mannenvakanties' }) %>
 <%- include('partials/pubnav', { active: 'groep' }) %>
 
-<header class="cover cover-slim">
+<header class="cover cover-slim page-hero">
+  <% if (typeof pageHeroId !== 'undefined' && pageHeroId) { %><div class="hero-bg" style="background-image:url('/hero/<%= pageHeroId %>')" aria-hidden="true"></div><% } %>
   <div class="cover-frame">
     <h1>Groepsfoto's</h1>
     <p class="tagline">Elk jaar één foto waarop iedereen samen staat.</p>

@@ -46,6 +46,10 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:.01em;}
 .hero-bg{position:absolute;inset:0;z-index:0;background-size:cover;background-position:center 35%;filter:brightness(.5) saturate(.9);}
 .home-hero::after{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(13,16,23,.62) 0%,rgba(13,16,23,.28) 45%,rgba(13,16,23,.97) 100%);}
 .home-hero h1{text-shadow:0 2px 22px rgba(0,0,0,.55);}
+/* subpagina-kop met achtergrondfoto (slanker dan de homepage) */
+.page-hero{position:relative;min-height:clamp(200px,27vh,320px);justify-content:center;}
+.page-hero::after{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(13,16,23,.68) 0%,rgba(13,16,23,.36) 45%,rgba(13,16,23,.97) 100%);}
+.page-hero h1,.page-hero .tagline{text-shadow:0 2px 18px rgba(0,0,0,.6);}
 
 /* ---------- SPINE NAV ---------- */
 .spine{position:sticky;top:0;z-index:40;background:rgba(13,16,23,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--paper-edge);display:flex;align-items:center;gap:4px;padding:10px clamp(14px,4vw,34px);overflow-x:auto;scrollbar-width:none;}
@@ -247,7 +251,8 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:.01em;}
 .cover-slim h1{font-size:clamp(28px,5vw,52px);}
 .cover-slim .tagline{margin-top:6px;font-size:clamp(14px,1.9vw,17px);}
 .pubnav-react{color:var(--gold-soft) !important;}
-.entries{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:clamp(14px,2.5vw,22px);}
+.entries{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px;margin:clamp(14px,2.5vw,22px) auto 0;max-width:640px;}
+@media (min-width:1000px){.entries{grid-template-columns:repeat(4,minmax(0,1fr));max-width:none;}}
 .entry-card{display:flex;align-items:center;gap:11px;text-decoration:none;padding:9px 15px;min-width:0;border:1px solid var(--paper-edge);border-radius:10px;background:rgba(13,16,23,.55);backdrop-filter:blur(4px);transition:background .2s,border-color .2s,transform .2s;}
 .entry-card:hover{background:rgba(244,168,58,.14);border-color:rgba(244,168,58,.6);transform:translateY(-2px);}
 .entry-card.is-current{background:rgba(244,168,58,.16);border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold);}

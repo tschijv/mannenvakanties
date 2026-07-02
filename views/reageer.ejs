@@ -1,7 +1,8 @@
 <%- include('partials/head', { title: 'Reageer — Mannenvakanties' }) %>
 <%- include('partials/pubnav', { active: 'reageer' }) %>
 
-<header class="cover cover-slim">
+<header class="cover cover-slim page-hero">
+  <% if (typeof pageHeroId !== 'undefined' && pageHeroId) { %><div class="hero-bg" style="background-image:url('/hero/<%= pageHeroId %>')" aria-hidden="true"></div><% } %>
   <div class="cover-frame">
     <h1>Reageer</h1>
     <p class="tagline">Een herinnering, een naam bij een gezicht, of gewoon een groet — laat het weten.</p>

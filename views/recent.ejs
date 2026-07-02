@@ -1,7 +1,8 @@
 <%- include('partials/head', { title: 'Recente wijzigingen — Mannenvakanties' }) %>
 <%- include('partials/pubnav', { active: 'recent' }) %>
 
-<header class="cover cover-slim">
+<header class="cover cover-slim page-hero">
+  <% if (typeof pageHeroId !== 'undefined' && pageHeroId) { %><div class="hero-bg" style="background-image:url('/hero/<%= pageHeroId %>')" aria-hidden="true"></div><% } %>
   <div class="cover-frame">
     <h1>Recente wijzigingen</h1>
     <p class="tagline">Wat er de laatste tijd aan het album is toegevoegd of veranderd.</p>

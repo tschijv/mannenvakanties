@@ -2,7 +2,8 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <%- include('partials/pubnav', { active: 'kaart' }) %>
 
-<header class="cover cover-slim">
+<header class="cover cover-slim page-hero">
+  <% if (typeof pageHeroId !== 'undefined' && pageHeroId) { %><div class="hero-bg" style="background-image:url('/hero/<%= pageHeroId %>')" aria-hidden="true"></div><% } %>
   <div class="cover-frame">
     <h1>Op de kaart</h1>
     <p class="tagline">Waar de mannen neerstreken. Klik een plek aan voor dat jaar.</p>
